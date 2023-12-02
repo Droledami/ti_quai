@@ -62,15 +62,22 @@ class QuaiDrawer extends StatelessWidget {
         ),
         child: ListView(
           children: [
-            const SizedBox(
+            SizedBox(
               height: 50,
+              child: TextDivider(
+                text: "Menu",
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                color: customColors.primaryDark!,
+                endIndent: 175,
+              ),
             ),
             ListTile(
-              title: const Text('Item 1'),
+              title: const Text("Accueil"),
               onTap: () {},
             ),
             ListTile(
-              title: const Text('Item 2'),
+              title: const Text("Gestion d'articles"),
               onTap: () {},
             ),
           ],
@@ -123,7 +130,6 @@ class Homescreen extends StatelessWidget {
             const SizedBox(
               height: 80,
             ),
-            OrderBox(),
             OrderBox(),
           ],
         ),
@@ -259,77 +265,14 @@ class OrderDetailed extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ListTile(
-                contentPadding: const EdgeInsets.only(
-                    left: 10, right: 10, top: 0, bottom: 0),
-                leading: Text(
-                  'Table 1',
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 30,
-                  ),
-                ),
-                title: Text(
-                  '4 articles',
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 24,
-                  ),
-                ),
-                trailing: Text(
-                  '22:35',
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  LittleCard(leftPadding: 10.0, text: "Qté"),
-                  LittleCard(text: "A-Z"),
-                  LittleCard(text: "N°"),
-                  LittleCard(text: "a-z"),
-                  LittleCard(text: "Sup."),
-                  LittleCard(flex: 3, text: "Prix U."),
-                  LittleCard(flex: 3, rightPadding: 10.0, text: "Total"),
-                ],
-              ),
-              TextDivider(text: "Menu"),
+              OrderHeader(),
+              TextDivider(text: "Menu", color: customColors.tertiary!),
               OrderElement(),
-              ListTile(
-                contentPadding: const EdgeInsets.only(
-                    left: 10, right: 10, top: 0, bottom: 0),
-                title: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: customColors.special!,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    'Règlement par cash',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      height: 1,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: customColors.special!,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    '999,50€',
-                    style: TextStyle(
-                      height: 1,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
-              ),
+              TextDivider(text: "Autres", color: customColors.tertiary!),
+              OthersOrderElement(),
+              TextDivider(text: "Promotions", color: customColors.tertiary!),
+              Promotions(),
+              GreatTotal(),
             ],
           ),
         ),
@@ -338,34 +281,352 @@ class OrderDetailed extends StatelessWidget {
   }
 }
 
-class OrderElement extends StatefulWidget {
-  const OrderElement({super.key});
+class GreatTotal extends StatelessWidget {
+  const GreatTotal({
+    super.key,
+  });
 
-  @override
-  State<OrderElement> createState() => _OrderElementState();
-}
-
-class _OrderElementState extends State<OrderElement> {
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Padding(
+      padding: EdgeInsets.all(5.0),
+      child: Container(
+        decoration: BoxDecoration(
+            color: customColors.cardHalfTransparency!,
+            borderRadius: BorderRadius.circular(10)),
+        child: Column(
+          children: [
+            TextDivider(
+              text: "Grand Total",
+              color: customColors.tertiary!,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 9),
+              child: Row(
+                children: [
+                  LittleCard(
+                      flex: 8,
+                      height: 26,
+                      leftMargin: 5,
+                      rightMargin: 2,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
+                      littleCardColor: customColors.special!,
+                      text: "Règlement par cash"),
+                  LittleCard(
+                      flex: 3,
+                      height: 26,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
+                      rightMargin: 5,
+                      littleCardColor: customColors.special!,
+                      text: "999.50€"),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class OrderHeader extends StatelessWidget {
+  const OrderHeader({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Container(
+      padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),
+      decoration: BoxDecoration(
+        color: customColors.cardHalfTransparency!,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(15),
+          topRight: Radius.circular(15),
+          bottomLeft: Radius.circular(5),
+          bottomRight: Radius.circular(5),
+        ),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding:
+                const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
+            leading: Text(
+              'Table 1',
+              style: TextStyle(
+                height: 1,
+                fontSize: 30,
+              ),
+            ),
+            title: Text(
+              '4 articles',
+              style: TextStyle(
+                height: 1,
+                fontSize: 24,
+              ),
+            ),
+            trailing: Text(
+              '22:35',
+              style: TextStyle(
+                height: 1,
+                fontSize: 24,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!,
+                  leftMargin: 10.0,
+                  text: "Qté"),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!, text: "A-Z"),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!, text: "N°"),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!, text: "a-z"),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!, text: "Sup."),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!,
+                  flex: 3,
+                  text: "Prix U."),
+              LittleCard(
+                  littleCardColor: customColors.primaryLight!,
+                  flex: 3,
+                  rightMargin: 10.0,
+                  text: "Total"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class Promotions extends StatelessWidget {
+  const Promotions({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    CustomColors customColors = Theme.of(context).extension<CustomColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LittleCard(leftPadding: 10.0, text: "2"),
-        LittleCard(text: "B"),
-        LittleCard(text: "1"),
-        LittleCard(empty: true,),
-        LittleCard(empty: true,),
-        LittleCard(flex: 3, text: "13€"),
-        LittleCard(flex: 3, rightPadding: 10.0, text: "26€"),
+        Wrap(
+          runAlignment: WrapAlignment.end,
+          direction: Axis.horizontal,
+          children: [
+            PromotionCard(
+              promotionName: "Discovery",
+              discountValue: 10,
+            ),
+            PromotionCard(
+              promotionName: "Discovery",
+              discountValue: 10,
+            ),
+            PromotionCard(
+              promotionName: "Discovery",
+              discountValue: 10,
+            ),
+            PromotionCard(
+              promotionName: "Discovery",
+              discountValue: 10,
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Expanded(
+              //Offsets the other child to the end of the line
+              flex: 8,
+              child: SizedBox(),
+            ),
+            LittleCard(
+              text: "-30€",
+              flex: 3,
+              littleCardColor: customColors.secondaryLight!,
+              rightMargin: 10.0,
+            )
+          ],
+        ),
       ],
     );
   }
 }
 
+class PromotionCard extends StatelessWidget {
+  const PromotionCard(
+      {super.key, required this.promotionName, required this.discountValue});
+
+  final String promotionName;
+  final double discountValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Padding(
+      padding: EdgeInsets.only(left: 10, right: 0, top: 3, bottom: 2),
+      child: Container(
+        width: 120,
+        padding: EdgeInsets.only(right: 3),
+        decoration: BoxDecoration(
+          color: customColors.secondary,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.only(left: 3, right: 3),
+              decoration: BoxDecoration(
+                color: customColors.secondaryLight,
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Text(
+                "-$discountValue€",
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 3),
+              child: Text(
+                promotionName,
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class OthersOrderElement extends StatelessWidget {
+  const OthersOrderElement({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            LittleCard(
+                littleCardColor: customColors.primary!,
+                leftMargin: 10.0,
+                text: "2"),
+            LittleCard(
+                littleCardColor: customColors.primary!,
+                flex: 7,
+                text: "Bic, Quai des Bananes"),
+            LittleCard(
+                littleCardColor: customColors.primary!,
+                flex: 3,
+                rightMargin: 10.0,
+                text: "26€"),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class OrderElement extends StatelessWidget {
+  const OrderElement({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            LittleCard(
+                littleCardColor: customColors.primaryLight!,
+                leftMargin: 10.0,
+                text: "2"),
+            LittleCard(littleCardColor: customColors.primaryLight!, text: "B"),
+            LittleCard(littleCardColor: customColors.primaryLight!, text: "1"),
+            LittleCard(
+              littleCardColor: customColors.primaryLight!,
+              empty: true,
+            ),
+            LittleCard(
+              littleCardColor: customColors.primaryLight!,
+              empty: true,
+            ),
+            LittleCard(
+                littleCardColor: customColors.primaryLight!,
+                flex: 3,
+                text: "13€"),
+            LittleCard(
+                littleCardColor: customColors.primaryLight!,
+                flex: 3,
+                rightMargin: 10.0,
+                text: "26€"),
+          ],
+        ),
+        Comment(),
+      ],
+    );
+  }
+}
+
+class Comment extends StatelessWidget {
+  const Comment({super.key, this.isExtra = false});
+
+  final bool isExtra;
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Padding(
+      padding: EdgeInsets.only(left: 25, top: 5, bottom: 2, right: 10),
+      child: Container(
+        width: 450,
+        padding: EdgeInsets.only(left: 2, right: 2, top: 3, bottom: 2),
+        decoration: BoxDecoration(
+          color: customColors.special!,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Text(
+          '${isExtra ? "Supplément" : "Commentaire"}: Sauce barbecue',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
 class TextDivider extends StatelessWidget {
-  const TextDivider({super.key, required this.text});
+  const TextDivider({
+    super.key,
+    required this.text,
+    required this.color,
+    this.fontSize = 13,
+    this.fontWeight = FontWeight.w500,
+    this.endIndent = 10,
+  });
 
   final String text;
+  final Color color;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double endIndent;
 
   @override
   Widget build(BuildContext context) {
@@ -378,14 +639,15 @@ class TextDivider extends StatelessWidget {
           padding: const EdgeInsets.only(left: 12, top: 5),
           child: Text(
             text,
+            style: TextStyle(fontSize: fontSize, fontWeight: fontWeight),
           ),
         ),
         Divider(
           height: 2,
           thickness: 3,
           indent: 10,
-          endIndent: 10,
-          color: customColors.tertiary!,
+          endIndent: endIndent,
+          color: color,
         ),
         SizedBox(
           height: 4,
@@ -396,28 +658,35 @@ class TextDivider extends StatelessWidget {
 }
 
 class LittleCard extends StatelessWidget {
-  const LittleCard({
-    super.key,
-    this.leftPadding = 3,
-    this.rightPadding = 0,
-    this.flex = 1,
-    this.empty = false,
-    this.text = "",
-  });
+  const LittleCard(
+      {super.key,
+      this.leftMargin = 3,
+      this.rightMargin = 0,
+      this.flex = 1,
+      this.empty = false,
+      this.text = "",
+      this.height = 20,
+      this.fontSize = 16,
+      this.fontWeight = FontWeight.w900,
+      required this.littleCardColor});
 
-  final double leftPadding;
-  final double rightPadding;
+  final double leftMargin;
+  final double rightMargin;
   final int flex;
   final bool empty;
   final String text;
+  final double height;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final Color littleCardColor;
 
   @override
   Widget build(BuildContext context) {
-    CustomColors customColors = Theme.of(context).extension<CustomColors>()!;
     if (empty) {
-      return Expanded( // because of flex Expanded will take the same space as if there were something
+      return Expanded(
+        // because of flex Expanded will take the same space as if there were something
         child: Padding(
-          padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+          padding: EdgeInsets.only(left: leftMargin, right: rightMargin),
           child: SizedBox(),
         ),
       );
@@ -425,20 +694,22 @@ class LittleCard extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Padding(
-        padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+        padding: EdgeInsets.only(left: leftMargin, right: rightMargin),
         child: Container(
-          padding: EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 3),
+          height: height,
+          padding: EdgeInsets.only(left: 2, right: 2, top: 3, bottom: 2),
           decoration: BoxDecoration(
-            color: customColors.primaryLight!,
+            color: littleCardColor,
             borderRadius: BorderRadius.circular(7),
           ),
           child: Text(
             text,
             maxLines: 1,
+            overflow: TextOverflow.clip,
             softWrap: false,
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontWeight: FontWeight.w900, height: 1.0, fontSize: 16),
+                fontWeight: fontWeight, height: 1.0, fontSize: fontSize),
           ),
         ),
       ),
