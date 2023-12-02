@@ -1,9 +1,17 @@
 import 'dart:ui';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import './theme.dart';
+import 'BeachGradientDecoration.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const App());
 }
 
@@ -92,45 +100,45 @@ class Homescreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
-    return Scaffold(
-      appBar: AppBar(
-        leading: MenuButton(customColors: customColors),
-        centerTitle: true,
-        title: TitleHeader(customColors: customColors),
-        backgroundColor: Colors.white.withOpacity(0.0),
-      ),
-      drawer: const QuaiDrawer(),
-      extendBodyBehindAppBar: true,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: customColors.secondary!,
-        child: const Icon(
-          Icons.add,
-          size: 40,
+    return Container(
+      decoration: BeachGradientDecoration(),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: Colors.transparent, //Allows parent container's bg to display
+        appBar: AppBar(
+          leading: MenuButton(customColors: customColors),
+          centerTitle: true,
+          title: TitleHeader(customColors: customColors),
+          backgroundColor: Colors.white.withOpacity(0.0),
         ),
-      ),
-      body: Container(
-        constraints: const BoxConstraints.expand(),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: const Alignment(0.00, -1.00),
-            end: const Alignment(0, 1),
-            stops: const [0.0, 0.08, 0.9, 1.0],
-            colors: [
-              customColors.tertiaryDark!,
-              customColors.tertiary!,
-              customColors.primaryLight!,
-              customColors.special!,
-            ],
+        drawer: const QuaiDrawer(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          backgroundColor: customColors.secondary!,
+          child: const Icon(
+            Icons.add,
+            size: 40,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+        body: Column(
           children: [
-            const SizedBox(
-              height: 80,
+            Expanded(
+              flex: 7,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const SizedBox(
+                      height: 80,
+                    ),
+                    OrderBox(),
+                    OrderBox(),
+                  ],
+                ),
+              ),
             ),
-            OrderBox(),
+            //Keeps some space at the bottom of the screen for visibility
+            Expanded(flex: 1, child: SizedBox())
           ],
         ),
       ),

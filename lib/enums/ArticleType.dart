@@ -1,0 +1,3 @@
+enum ArticleType{
+  menu, other
+}

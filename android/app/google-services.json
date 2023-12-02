@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "788452886474",
+    "project_id": "fir-testjustin-c0d86",
+    "storage_bucket": "fir-testjustin-c0d86.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:788452886474:android:1401884e4135aef053b133",
+        "android_client_info": {
+          "package_name": "be.helha.testfirebasejustin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7vpt3qRiXHYcaG0aTGrerKca756A0o2o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:788452886474:android:d07fec4cfe441cc953b133",
+        "android_client_info": {
+          "package_name": "shazzanova.quaidesbananes.ti_quai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7vpt3qRiXHYcaG0aTGrerKca756A0o2o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
