@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:ti_quai/firestore/firestore_service.dart';
 import './theme.dart';
 import 'BeachGradientDecoration.dart';
 import 'firebase_options.dart';
@@ -11,6 +12,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirestoreService firestoreService = FirestoreService();
+  firestoreService.getOrders().first.then((value) => print(value[0].orderElements[0].articleName));
 
   runApp(const App());
 }
@@ -275,7 +279,7 @@ class OrderDetailed extends StatelessWidget {
             children: [
               OrderHeader(),
               TextDivider(text: "Menu", color: customColors.tertiary!),
-              OrderElement(),
+              OrderLineElement(),
               TextDivider(text: "Autres", color: customColors.tertiary!),
               OthersOrderElement(),
               TextDivider(text: "Promotions", color: customColors.tertiary!),
@@ -550,8 +554,8 @@ class OthersOrderElement extends StatelessWidget {
   }
 }
 
-class OrderElement extends StatelessWidget {
-  const OrderElement({super.key});
+class OrderLineElement extends StatelessWidget {
+  const OrderLineElement({super.key});
 
   @override
   Widget build(BuildContext context) {

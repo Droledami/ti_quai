@@ -13,6 +13,6 @@ class PromotionElement {
       {required this.id, required this.orderElement, required this.promotion});
 
   String id;
-  OrderElement orderElement;
+  OrderLineElement orderElement;
   Promotion promotion;
 }

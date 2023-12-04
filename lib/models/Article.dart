@@ -1,7 +1,6 @@
 import 'package:ti_quai/enums/ArticleType.dart';
 
 class Article {
-  static const String keyId = "id";
   static const String keyAlpha = "alpha";
   static const String keyNumber = "number";
   static const String keySubAlpha = "subAlpha";
@@ -10,7 +9,6 @@ class Article {
   static const String keyPrice = "price";
 
   Article({
-    required this.id,
     required this.alpha,
     required this.number,
     required this.subAlpha,
@@ -19,7 +17,6 @@ class Article {
     required this.price,
   });
 
-  String id;
   String alpha;
   int number;
   String subAlpha;
