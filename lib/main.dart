@@ -355,12 +355,11 @@ class OrderDetailed extends StatefulWidget {
 }
 
 class _OrderDetailedState extends State<OrderDetailed> {
-
   bool hasOther = false;
-  bool hasPromotion = false;
 
   @override
   Widget build(BuildContext context) {
+    final hasPromotion = widget.order.hasAnyPromotions;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Padding(
@@ -392,19 +391,18 @@ class _OrderDetailedState extends State<OrderDetailed> {
               }).toList()),
               Column(
                 children: [
-                  Builder(
-                    builder: (context) {
-                      if(hasOther){
-                        return TextDivider(text: "Autres", color: customColors.tertiary!);
-                      }else{
-                        return SizedBox.shrink();
-                      }
+                  Builder(builder: (context) {
+                    if (hasOther) {
+                      return TextDivider(
+                          text: "Autres", color: customColors.tertiary!);
+                    } else {
+                      return SizedBox.shrink();
                     }
-                  ),
+                  }),
                   Column(
                       children: widget.order.orderElements.map((orderElement) {
                     if (orderElement.articleType == ArticleType.other) {
-                      if(!hasOther) hasOther=true;
+                      if (!hasOther) hasOther = true;
                       return OthersOrderLineElement(
                         productName: orderElement.articleName,
                         productPrice: orderElement.articlePrice,
@@ -416,8 +414,21 @@ class _OrderDetailedState extends State<OrderDetailed> {
                   }).toList()),
                 ],
               ),
-              TextDivider(text: "Promotions", color: customColors.tertiary!),
-              Promotions(),
+              Column(
+                children: [
+                  Builder(builder: (context) {
+                    if (hasPromotion) {
+                      return TextDivider(
+                          text: "Promotions", color: customColors.tertiary!);
+                    } else {
+                      return SizedBox.shrink();
+                    }
+                  }),
+                  Promotions(
+                      totalDiscount: widget.order.totalDiscount,
+                      orderElements: widget.order.orderElements),
+                ],
+              ),
               GreatTotal(
                   paymentMethod: widget.order.paymentMethod,
                   totalPrice: widget.order.totalPrice),
@@ -580,7 +591,11 @@ class OrderHeader extends StatelessWidget {
 }
 
 class Promotions extends StatelessWidget {
-  const Promotions({super.key});
+  const Promotions(
+      {super.key, required this.orderElements, required this.totalDiscount});
+
+  final List<OrderElement> orderElements;
+  final double totalDiscount;
 
   @override
   Widget build(BuildContext context) {
@@ -591,24 +606,27 @@ class Promotions extends StatelessWidget {
         Wrap(
           runAlignment: WrapAlignment.end,
           direction: Axis.horizontal,
-          children: [
-            PromotionCard(
-              promotionName: "Discovery",
-              discountValue: 10,
-            ),
-            PromotionCard(
-              promotionName: "Discovery",
-              discountValue: 10,
-            ),
-            PromotionCard(
-              promotionName: "Discovery",
-              discountValue: 10,
-            ),
-            PromotionCard(
-              promotionName: "Discovery",
-              discountValue: 10,
-            ),
-          ],
+          children: orderElements.map((orderElement) {
+            if (orderElement.hasPromotion && orderElement.promotion != null) {
+              return PromotionCard(
+                  promotionName: orderElement.promotion!.nameShort,
+                  discountValue: orderElement.promotion!.discountValue);
+            } else if (orderElement.hasPromotion &&
+                orderElement.promotion == null) {
+              print(
+                  "Error, a promotion has incorrectly set values : hasPromotion is true, yet promotion is null");
+              return SizedBox();
+            } else if (!orderElement.hasPromotion &&
+                orderElement.promotion != null) {
+              print(
+                  "Warning, a promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
+              return PromotionCard(
+                  promotionName: orderElement.promotion!.nameShort,
+                  discountValue: orderElement.promotion!.discountValue);
+            } else {
+              return SizedBox();
+            }
+          }).toList(),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -616,10 +634,10 @@ class Promotions extends StatelessWidget {
             Expanded(
               //Offsets the other child to the end of the line
               flex: 8,
-              child: SizedBox(),
+              child: SizedBox.shrink(),
             ),
             LittleCard(
-              text: "-30€",
+              text: "-$totalDiscount€",
               flex: 3,
               littleCardColor: customColors.secondaryLight!,
               rightMargin: 10.0,

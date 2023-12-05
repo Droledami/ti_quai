@@ -26,8 +26,8 @@ class CustomerOrder {
 
   //getters
   double get totalPrice {
-    double totalPrice = 0;
     double totalDiscount = 0;
+    double totalPrice = 0;
     for (OrderElement orderElement in orderElements) {
       totalPrice += orderElement.price;
       if (orderElement.hasPromotion && orderElement.promotion != null) {
@@ -36,4 +36,25 @@ class CustomerOrder {
     }
     return totalPrice - totalDiscount;
   }
+
+  //TODO: Un peu chiant ça, je le calcule déjà au dessus, allô comment faire ?
+  double get totalDiscount{
+    double totalDiscount = 0;
+    for (OrderElement orderElement in orderElements) {
+      if (orderElement.hasPromotion && orderElement.promotion != null) {
+        totalDiscount += orderElement.promotion!.discountValue;
+      }
+    }
+    return totalDiscount;
+  }
+
+  bool get hasAnyPromotions{
+    for (OrderElement orderElement in orderElements) {
+      if (orderElement.hasPromotion && orderElement.promotion != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }
