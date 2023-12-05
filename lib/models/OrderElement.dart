@@ -2,6 +2,8 @@ import 'package:ti_quai/models/Article.dart';
 
 import 'package:ti_quai/models/Promotion.dart';
 
+import '../enums/ArticleType.dart';
+
 class OrderElement {
   static const String keyArticle = "article";
   static const String keyQuantity = "quantity";
@@ -69,8 +71,8 @@ class OrderElement {
     return article.number;
   }
 
-  String get articleType{
-    return article.type.name;
+  ArticleType get articleType{
+    return article.type;
   }
 
   double get articlePrice{

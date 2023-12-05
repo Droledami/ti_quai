@@ -11,7 +11,6 @@ class FirestoreService {
   final CollectionReference _orderCollection =
       FirebaseFirestore.instance.collection("Order");
 
-//CRUD FOR ORDERS
   Stream<List<CustomerOrder>> getOrders() {
     return _orderCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -25,6 +24,7 @@ class FirestoreService {
         }
         return CustomerOrder(
             id: doc.id,
+            tableNumber: data[CustomerOrder.keyTableNumber],
             date: (data[CustomerOrder.keyDate] as Timestamp).toDate(),
             orderElements: orderElementList,
             paymentMethod: data[CustomerOrder.keyPaymentMethod] ==
@@ -40,13 +40,13 @@ class FirestoreService {
 
     Article article = createArticleFromSnapshot(oe);
 
-    orderElementToAdd = OrderElement(
-        article: article, quantity: oe[OrderElement.keyQuantity]);
+    orderElementToAdd =
+        OrderElement(article: article, quantity: oe[OrderElement.keyQuantity]);
 
     createPromotionFromSnapshot(oe, orderElementToAdd);
 
     if (oe[OrderElement.keyComment] != "") {
-      orderElementToAdd.comment == oe[OrderElement.keyComment];
+      orderElementToAdd.comment = oe[OrderElement.keyComment];
       if (oe[OrderElement.keyCommentIsExtra]) {
         orderElementToAdd.commentIsExtra = true;
         orderElementToAdd.extraPrice = oe[OrderElement.keyExtraPrice];
@@ -62,8 +62,7 @@ class FirestoreService {
           discountValue: oe[OrderElement.keyPromotion]
               [Promotion.keyDiscountValue],
           nameLong: oe[OrderElement.keyPromotion][Promotion.keyNameLong],
-          nameShort: oe[OrderElement.keyPromotion]
-              [Promotion.keyNameShort]);
+          nameShort: oe[OrderElement.keyPromotion][Promotion.keyNameShort]);
       orderElementToAdd.hasPromotion = true;
       orderElementToAdd.promotion = promotion;
     }
@@ -84,18 +83,65 @@ class FirestoreService {
   }
 
   Future<void> addOrder(CustomerOrder order) {
+    List<Map<String, dynamic>> oeMapList =
+        List<Map<String, dynamic>>.empty(growable: true);
+
+    for (OrderElement oe in order.orderElements) {
+      Map<String, dynamic> oeMap = convertOrderElementToMaps(oe);
+      oeMapList.add(oeMap);
+    }
+
     return _orderCollection.add({
+      CustomerOrder.keyTableNumber: order.tableNumber,
       CustomerOrder.keyDate: order.date,
-      CustomerOrder.keyOrderElements: order.orderElements,
-      CustomerOrder.keyPaymentMethod: order.paymentMethod
+      CustomerOrder.keyOrderElements: oeMapList,
+      CustomerOrder.keyPaymentMethod: order.paymentMethod.name
     });
   }
 
+  Map<String, dynamic> convertOrderElementToMaps(OrderElement oe) {
+    Map<String, dynamic> oeMap = <String, dynamic>{};
+    Map<String, dynamic> artMap = <String, dynamic>{};
+    Map<String, dynamic> promMap = <String, dynamic>{};
+
+    oeMap[OrderElement.keyQuantity] = oe.quantity;
+    oeMap[OrderElement.keyComment] = oe.comment;
+    oeMap[OrderElement.keyCommentIsExtra] = oe.commentIsExtra;
+    oeMap[OrderElement.keyExtraPrice] = oe.extraPrice;
+    oeMap[OrderElement.keyHasPromotion] = oe.hasPromotion;
+
+    artMap[Article.keyAlpha] = oe.articleAlpha;
+    artMap[Article.keyNumber] = oe.articleNumber;
+    artMap[Article.keySubAlpha] = oe.articleSubAlpha;
+    artMap[Article.keyName] = oe.articleName;
+    artMap[Article.keyType] = oe.articleType.name;
+    artMap[Article.keyPrice] = oe.articlePrice;
+
+    oeMap[OrderElement.keyArticle] = artMap;
+
+    if (oe.hasPromotion) {
+      promMap[Promotion.keyDiscountValue] = oe.promotionDiscountValue;
+      promMap[Promotion.keyNameLong] = oe.promotionNameLong;
+      promMap[Promotion.keyNameShort] = oe.promotionNameShort;
+      oeMap[OrderElement.keyPromotion] = promMap;
+    }
+    return oeMap;
+  }
+
   Future<void> updateOrder(CustomerOrder order) {
+    List<Map<String, dynamic>> oeMapList =
+        List<Map<String, dynamic>>.empty(growable: true);
+
+    for (OrderElement oe in order.orderElements) {
+      Map<String, dynamic> oeMap = convertOrderElementToMaps(oe);
+      oeMapList.add(oeMap);
+    }
+
     return _orderCollection.doc(order.id).update({
+      CustomerOrder.keyTableNumber: order.tableNumber,
       CustomerOrder.keyDate: order.date,
-      CustomerOrder.keyOrderElements: order.orderElements,
-      CustomerOrder.keyPaymentMethod: order.paymentMethod
+      CustomerOrder.keyOrderElements: oeMapList,
+      CustomerOrder.keyPaymentMethod: order.paymentMethod.name
     });
   }
 

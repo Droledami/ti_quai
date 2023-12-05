@@ -1,11 +1,22 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import './theme.dart';
 import 'BeachGradientDecoration.dart';
+import 'blocs/order/order_bloc.dart';
+import 'blocs/order/order_states.dart';
+import 'enums/ArticleType.dart';
+import 'enums/PaymentMethod.dart';
 import 'firebase_options.dart';
+import 'models/Article.dart';
+import 'models/CustomerOrder.dart';
+import 'models/OrderElement.dart';
+import 'models/Promotion.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +24,37 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  FirestoreService firestoreService = FirestoreService();
-  firestoreService.getOrders().first.then((value) => print(value[0].orderElements[0].articleName));
+  // FirestoreService firestoreService = FirestoreService();
+  // firestoreService.getOrders().first.then((value) => print(value[0].date));
+  //
+  // try {
+  //   var oeList = List<OrderElement>.empty(growable: true);
+  //   OrderElement oe = OrderElement(
+  //       article: Article(
+  //           alpha: "B",
+  //           number: 3,
+  //           subAlpha: "y",
+  //           name: "En selle Marcel",
+  //           price: 12,
+  //           type: ArticleType.menu),
+  //       quantity: 3);
+  //   oe.promotion = Promotion(
+  //       discountValue: 3, nameLong: "Stampit Fidélité", nameShort: "Stampit");
+  //   oe.hasPromotion = true;
+  //   oe.comment = "Sauce BBQ";
+  //   oe.commentIsExtra = true;
+  //   oe.extraPrice = 5;
+  //   oeList.add(oe);
+  //   firestoreService.addOrder(CustomerOrder(
+  //       id: "test",
+  //       date: DateTime.now(),
+  //       orderElements: oeList,
+  //       paymentMethod: PaymentMethod.cash, tableNumber: 2));
+  // } catch (e) {
+  //   print(e);
+  // }
+
+  //firestoreService.deleteOrder("2CKpHBRr4O7gpMyQrTTL");
 
   runApp(const App());
 }
@@ -24,27 +64,33 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData.light().copyWith(extensions: <ThemeExtension<dynamic>>[
-        const CustomColors(
-          primary: Color(0xFF7AE582),
-          //For main products and menu buttons
-          primaryDark: Color(0xFF25A18E),
-          primaryLight: Color(0xFF9FFFCB),
-          secondary: Color(0xFFF79256),
-          //For promotions and action buttons
-          secondaryLight: Color(0xFFFBD1A2),
-          tertiary: Color(0xFF00A5CF),
-          //Main background color
-          tertiaryDark: Color(0xFF004E64),
-          special: Color(0xFFD4E997),
-          //For special elements such as comments and supplements
-          cardQuarterTransparency: Color(0x4DFFFFFF),
-          //White 30% alpha
-          cardHalfTransparency: Color(0x80FFFFFF), //White 50% alpha
-        ),
-      ]),
-      home: Homescreen(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<OrderBloc>(
+            create: (context) => OrderBloc(FirestoreService())),
+      ],
+      child: MaterialApp(
+        theme: ThemeData.light().copyWith(extensions: <ThemeExtension<dynamic>>[
+          const CustomColors(
+            primary: Color(0xFF7AE582),
+            //For main products and menu buttons
+            primaryDark: Color(0xFF25A18E),
+            primaryLight: Color(0xFF9FFFCB),
+            secondary: Color(0xFFF79256),
+            //For promotions and action buttons
+            secondaryLight: Color(0xFFFBD1A2),
+            tertiary: Color(0xFF00A5CF),
+            //Main background color
+            tertiaryDark: Color(0xFF004E64),
+            special: Color(0xFFD4E997),
+            //For special elements such as comments and supplements
+            cardQuarterTransparency: Color(0x4DFFFFFF),
+            //White 30% alpha
+            cardHalfTransparency: Color(0x80FFFFFF), //White 50% alpha
+          ),
+        ]),
+        home: Homescreen(),
+      ),
     );
   }
 }
@@ -99,16 +145,29 @@ class QuaiDrawer extends StatelessWidget {
   }
 }
 
-class Homescreen extends StatelessWidget {
+class Homescreen extends StatefulWidget {
+  @override
+  State<Homescreen> createState() => _HomescreenState();
+}
+
+class _HomescreenState extends State<Homescreen> {
+  @override
+  void initState() {
+    BlocProvider.of<OrderBloc>(context).add(LoadOrder());
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final OrderBloc _orderBloc = BlocProvider.of<OrderBloc>(context);
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Container(
       decoration: BeachGradientDecoration(),
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        backgroundColor: Colors.transparent, //Allows parent container's bg to display
+        backgroundColor: Colors.transparent,
+        //Allows parent container's bg to display
         appBar: AppBar(
           leading: MenuButton(customColors: customColors),
           centerTitle: true,
@@ -124,27 +183,40 @@ class Homescreen extends StatelessWidget {
             size: 40,
           ),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              flex: 7,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 80,
-                    ),
-                    OrderBox(),
-                    OrderBox(),
-                  ],
+        body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
+          if (state is OrderLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (state is OrderLoaded) {
+            return Column(
+              children: [
+                const SizedBox(
+                  height: 65,
                 ),
-              ),
-            ),
-            //Keeps some space at the bottom of the screen for visibility
-            Expanded(flex: 1, child: SizedBox())
-          ],
-        ),
+                Expanded(
+                  flex: 7,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: state.orders.map((order) {
+                        return OrderBox(order: order);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                //Keeps some space at the bottom of the screen for visibility
+                Expanded(flex: 1, child: SizedBox())
+              ],
+            );
+          } else if (state is OrderOperationSuccess) {
+            return Container();
+          } else if (state is OrderError) {
+            return Container();
+          } else {
+            return Container();
+          }
+        }),
       ),
     );
   }
@@ -232,22 +304,32 @@ class MenuButton extends StatelessWidget {
   }
 }
 
-class OrderBox extends StatelessWidget {
-  const OrderBox({
-    super.key,
-  });
+class OrderBox extends StatefulWidget {
+  const OrderBox({super.key, required this.order});
+
+  final CustomerOrder order;
+
+  @override
+  State<OrderBox> createState() => _OrderBoxState();
+}
+
+class _OrderBoxState extends State<OrderBox> {
+  bool _selected = false;
 
   @override
   Widget build(BuildContext context) {
-    final CustomColors customColors =
-        Theme.of(context).extension<CustomColors>()!;
+    CustomerOrder order = widget.order;
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        setState(() {
+          _selected = !_selected;
+        });
+      },
       child: Builder(builder: (context) {
-        if (true) {
-          return OrderDetailed(customColors: customColors);
+        if (_selected) {
+          return OrderDetailed(order: order);
         } else {
-          return OrderSimple(customColors: customColors);
+          return OrderSimple(order: order);
         }
       }),
     );
@@ -255,15 +337,14 @@ class OrderBox extends StatelessWidget {
 }
 
 class OrderDetailed extends StatelessWidget {
-  const OrderDetailed({
-    super.key,
-    required this.customColors,
-  });
+  const OrderDetailed({super.key, required this.order});
 
-  final CustomColors customColors;
+  final CustomerOrder order;
 
   @override
   Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
     return Padding(
       padding: const EdgeInsets.only(left: 14, right: 14, bottom: 10),
       child: Container(
@@ -277,14 +358,21 @@ class OrderDetailed extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              OrderHeader(),
+              OrderHeader(
+                tableNumber: order.tableNumber,
+                articleNumber: order.orderElements.length,
+                orderDate: order.date,
+              ),
               TextDivider(text: "Menu", color: customColors.tertiary!),
-              OrderLineElement(),
+              Column(
+                  children: order.orderElements.map((orderElement) {
+                return OrderLineElement(orderElement: orderElement);
+              }).toList()),
               TextDivider(text: "Autres", color: customColors.tertiary!),
-              OthersOrderElement(),
+              OthersOrderLineElement(),
               TextDivider(text: "Promotions", color: customColors.tertiary!),
               Promotions(),
-              GreatTotal(),
+              GreatTotal(paymentMethod: order.paymentMethod, totalPrice: order.totalPrice),
             ],
           ),
         ),
@@ -296,10 +384,16 @@ class OrderDetailed extends StatelessWidget {
 class GreatTotal extends StatelessWidget {
   const GreatTotal({
     super.key,
+    required this.paymentMethod,
+    required this.totalPrice,
   });
+
+  final PaymentMethod paymentMethod;
+  final double totalPrice;
 
   @override
   Widget build(BuildContext context) {
+    String paymentMethodString = paymentMethod.name;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Padding(
@@ -326,7 +420,7 @@ class GreatTotal extends StatelessWidget {
                       fontSize: 19,
                       fontWeight: FontWeight.w500,
                       littleCardColor: customColors.special!,
-                      text: "Règlement par cash"),
+                      text: "Règlement par $paymentMethodString"),
                   LittleCard(
                       flex: 3,
                       height: 26,
@@ -334,7 +428,7 @@ class GreatTotal extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       rightMargin: 5,
                       littleCardColor: customColors.special!,
-                      text: "999.50€"),
+                      text: "$totalPrice€"),
                 ],
               ),
             ),
@@ -346,78 +440,92 @@ class GreatTotal extends StatelessWidget {
 }
 
 class OrderHeader extends StatelessWidget {
-  const OrderHeader({
-    super.key,
-  });
+  const OrderHeader(
+      {super.key,
+      required this.tableNumber,
+      required this.articleNumber,
+      required this.orderDate});
+
+  final int tableNumber;
+  final int articleNumber;
+  final DateTime orderDate;
 
   @override
   Widget build(BuildContext context) {
+    final orderTime = getHourAndMinuteString(orderDate);
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
-    return Container(
-      padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),
-      decoration: BoxDecoration(
-        color: customColors.cardHalfTransparency!,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(15),
-          topRight: Radius.circular(15),
-          bottomLeft: Radius.circular(5),
-          bottomRight: Radius.circular(5),
+    return GestureDetector(
+      onTap: () {
+        print("close details"); //TODO: fermer la commande
+      },
+      child: Container(
+        padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),
+        decoration: BoxDecoration(
+          color: customColors.cardHalfTransparency!,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(5),
+            bottomRight: Radius.circular(5),
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding:
-                const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
-            leading: Text(
-              'Table 1',
-              style: TextStyle(
-                height: 1,
-                fontSize: 30,
+        child: Column(
+          children: [
+            ListTile(
+              contentPadding:
+                  const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
+              leading: Text(
+                'Table $tableNumber',
+                style: TextStyle(
+                  height: 1,
+                  fontSize: 30,
+                ),
+              ),
+              title: Text(
+                articleNumber > 1
+                    ? "$articleNumber articles"
+                    : "$articleNumber article",
+                style: TextStyle(
+                  height: 1,
+                  fontSize: 24,
+                ),
+              ),
+              trailing: Text(
+                orderTime,
+                style: TextStyle(
+                  height: 1,
+                  fontSize: 24,
+                ),
               ),
             ),
-            title: Text(
-              '4 articles',
-              style: TextStyle(
-                height: 1,
-                fontSize: 24,
-              ),
+            Row(
+              children: [
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!,
+                    leftMargin: 10.0,
+                    text: "Qté"),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!, text: "A-Z"),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!, text: "N°"),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!, text: "a-z"),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!, text: "Sup."),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!,
+                    flex: 3,
+                    text: "Prix U."),
+                LittleCard(
+                    littleCardColor: customColors.primaryLight!,
+                    flex: 3,
+                    rightMargin: 10.0,
+                    text: "Total"),
+              ],
             ),
-            trailing: Text(
-              '22:35',
-              style: TextStyle(
-                height: 1,
-                fontSize: 24,
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!,
-                  leftMargin: 10.0,
-                  text: "Qté"),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!, text: "A-Z"),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!, text: "N°"),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!, text: "a-z"),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!, text: "Sup."),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!,
-                  flex: 3,
-                  text: "Prix U."),
-              LittleCard(
-                  littleCardColor: customColors.primaryLight!,
-                  flex: 3,
-                  rightMargin: 10.0,
-                  text: "Total"),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -522,8 +630,8 @@ class PromotionCard extends StatelessWidget {
   }
 }
 
-class OthersOrderElement extends StatelessWidget {
-  const OthersOrderElement({super.key});
+class OthersOrderLineElement extends StatelessWidget {
+  const OthersOrderLineElement({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +663,9 @@ class OthersOrderElement extends StatelessWidget {
 }
 
 class OrderLineElement extends StatelessWidget {
-  const OrderLineElement({super.key});
+  const OrderLineElement({super.key, required this.orderElement});
+
+  final OrderElement orderElement;
 
   @override
   Widget build(BuildContext context) {
@@ -569,38 +679,58 @@ class OrderLineElement extends StatelessWidget {
             LittleCard(
                 littleCardColor: customColors.primaryLight!,
                 leftMargin: 10.0,
-                text: "2"),
-            LittleCard(littleCardColor: customColors.primaryLight!, text: "B"),
-            LittleCard(littleCardColor: customColors.primaryLight!, text: "1"),
-            LittleCard(
-              littleCardColor: customColors.primaryLight!,
-              empty: true,
-            ),
-            LittleCard(
-              littleCardColor: customColors.primaryLight!,
-              empty: true,
-            ),
+                text: "${orderElement.quantity}"),
             LittleCard(
                 littleCardColor: customColors.primaryLight!,
-                flex: 3,
-                text: "13€"),
+                text: orderElement.articleAlpha),
             LittleCard(
+                littleCardColor: customColors.primaryLight!,
+                text: "${orderElement.articleNumber}"),
+            LittleCard(
+              //Shows the subAlpha code of the order if it exists
+              littleCardColor: customColors.primaryLight!,
+              empty: orderElement.articleSubAlpha.isEmpty,
+              text: orderElement.articleSubAlpha,
+            ),
+            LittleCard(
+              //Show the price of the extra if there is one
+              littleCardColor: customColors.primaryLight!,
+              empty: !orderElement.commentIsExtra,
+              text: "${orderElement.extraPrice}€",
+            ),
+            LittleCard(
+                //Unit price for the article
+                littleCardColor: customColors.primaryLight!,
+                flex: 3,
+                text: "${orderElement.articlePrice}€"),
+            LittleCard(
+                //Total price for the orderElement
                 littleCardColor: customColors.primaryLight!,
                 flex: 3,
                 rightMargin: 10.0,
-                text: "26€"),
+                text: "${orderElement.price}€"),
           ],
         ),
-        Comment(),
+        Builder(builder: (context) {
+          if (orderElement.comment.isNotEmpty) {
+            return Comment(
+              comment: orderElement.comment,
+              isExtra: orderElement.commentIsExtra,
+            );
+          } else {
+            return SizedBox.shrink();
+          }
+        }),
       ],
     );
   }
 }
 
 class Comment extends StatelessWidget {
-  const Comment({super.key, this.isExtra = false});
+  const Comment({super.key, this.isExtra = false, required this.comment});
 
   final bool isExtra;
+  final String comment;
 
   @override
   Widget build(BuildContext context) {
@@ -616,7 +746,7 @@ class Comment extends StatelessWidget {
           borderRadius: BorderRadius.circular(7),
         ),
         child: Text(
-          '${isExtra ? "Supplément" : "Commentaire"}: Sauce barbecue',
+          '${isExtra ? "Supplément" : "Commentaire"}: $comment',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -642,8 +772,6 @@ class TextDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CustomColors customColors =
-        Theme.of(context).extension<CustomColors>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -709,7 +837,7 @@ class LittleCard extends StatelessWidget {
         padding: EdgeInsets.only(left: leftMargin, right: rightMargin),
         child: Container(
           height: height,
-          padding: EdgeInsets.only(left: 2, right: 2, top: 3, bottom: 2),
+          padding: EdgeInsets.only(left: 2, right: 2, top: 3, bottom: 0),
           decoration: BoxDecoration(
             color: littleCardColor,
             borderRadius: BorderRadius.circular(7),
@@ -721,7 +849,7 @@ class LittleCard extends StatelessWidget {
             softWrap: false,
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontWeight: fontWeight, height: 1.0, fontSize: fontSize),
+                fontWeight: fontWeight, height: 1, fontSize: fontSize),
           ),
         ),
       ),
@@ -730,15 +858,16 @@ class LittleCard extends StatelessWidget {
 }
 
 class OrderSimple extends StatelessWidget {
-  const OrderSimple({
-    super.key,
-    required this.customColors,
-  });
+  const OrderSimple({super.key, required this.order});
 
-  final CustomColors customColors;
+  final CustomerOrder order;
 
   @override
   Widget build(BuildContext context) {
+    final numberOfArticles = order.orderElements.length;
+    String orderTime = getHourAndMinuteString(order.date);
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
     return Padding(
       padding: const EdgeInsets.only(left: 14, right: 14, bottom: 10),
       child: Container(
@@ -755,21 +884,23 @@ class OrderSimple extends StatelessWidget {
                 contentPadding: const EdgeInsets.only(
                     left: 10, right: 10, top: 0, bottom: 0),
                 leading: Text(
-                  'Table 1',
+                  'Table ${order.tableNumber}',
                   style: TextStyle(
                     height: 1,
                     fontSize: 30,
                   ),
                 ),
                 title: Text(
-                  '4 articles',
+                  numberOfArticles > 1
+                      ? "$numberOfArticles articles"
+                      : "$numberOfArticles article",
                   style: TextStyle(
                     height: 1,
                     fontSize: 24,
                   ),
                 ),
                 trailing: Text(
-                  '22:35',
+                  orderTime,
                   style: TextStyle(
                     height: 1,
                     fontSize: 24,
@@ -786,7 +917,7 @@ class OrderSimple extends StatelessWidget {
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
-                    'Règlement par cash',
+                    "Règlement par ${order.paymentMethod.name}",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       height: 1,
@@ -801,7 +932,7 @@ class OrderSimple extends StatelessWidget {
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
-                    '999,50€',
+                    "${order.totalPrice}€",
                     style: TextStyle(
                       height: 1,
                       fontSize: 24,
@@ -815,4 +946,9 @@ class OrderSimple extends StatelessWidget {
       ),
     );
   }
+}
+
+String getHourAndMinuteString(DateTime date) {
+  final String time = "${date.hour}:${date.minute}";
+  return time;
 }
