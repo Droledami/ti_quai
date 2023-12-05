@@ -43,7 +43,7 @@ class FirestoreService {
     orderElementToAdd =
         OrderElement(article: article, quantity: oe[OrderElement.keyQuantity]);
 
-    createPromotionFromSnapshot(oe, orderElementToAdd);
+    addPromotionFromSnapshotToOrderElement(oe, orderElementToAdd);
 
     if (oe[OrderElement.keyComment] != "") {
       orderElementToAdd.comment = oe[OrderElement.keyComment];
@@ -55,7 +55,7 @@ class FirestoreService {
     return orderElementToAdd;
   }
 
-  void createPromotionFromSnapshot(oe, OrderElement orderElementToAdd) {
+  void addPromotionFromSnapshotToOrderElement(oe, OrderElement orderElementToAdd) {
     Promotion promotion;
     if (oe[OrderElement.keyHasPromotion]) {
       promotion = Promotion(
@@ -69,16 +69,26 @@ class FirestoreService {
   }
 
   Article createArticleFromSnapshot(oe) {
-    Article fetchedArticle = Article(
-        alpha: oe[OrderElement.keyArticle][Article.keyAlpha],
-        number: oe[OrderElement.keyArticle][Article.keyNumber],
-        subAlpha: oe[OrderElement.keyArticle][Article.keySubAlpha],
-        name: oe[OrderElement.keyArticle][Article.keyName],
-        type: oe[OrderElement.keyArticle][Article.keyType] ==
-                ArticleType.menu.name
+    ArticleType articleType =
+        oe[OrderElement.keyArticle][Article.keyType] == ArticleType.menu.name
             ? ArticleType.menu
-            : ArticleType.other,
-        price: oe[OrderElement.keyArticle][Article.keyPrice]);
+            : ArticleType.other;
+
+    Article fetchedArticle;
+    switch (articleType) {
+      case ArticleType.menu:
+        fetchedArticle = Article.menu(
+            alpha: oe[OrderElement.keyArticle][Article.keyAlpha],
+            number: oe[OrderElement.keyArticle][Article.keyNumber],
+            subAlpha: oe[OrderElement.keyArticle][Article.keySubAlpha],
+            name: oe[OrderElement.keyArticle][Article.keyName],
+            price: oe[OrderElement.keyArticle][Article.keyPrice]);
+      case ArticleType.other:
+        fetchedArticle = Article.other(
+            name: oe[OrderElement.keyArticle][Article.keyName],
+            price: oe[OrderElement.keyArticle][Article.keyPrice]);
+    }
+
     return fetchedArticle;
   }
 
@@ -148,4 +158,5 @@ class FirestoreService {
   Future<void> deleteOrder(String orderId) {
     return _orderCollection.doc(orderId).delete();
   }
+
 }

@@ -25,18 +25,16 @@ void main() async {
   );
 
   // FirestoreService firestoreService = FirestoreService();
-  // firestoreService.getOrders().first.then((value) => print(value[0].date));
   //
   // try {
   //   var oeList = List<OrderElement>.empty(growable: true);
   //   OrderElement oe = OrderElement(
-  //       article: Article(
+  //       article: Article.menu(
   //           alpha: "B",
   //           number: 3,
   //           subAlpha: "y",
   //           name: "En selle Marcel",
-  //           price: 12,
-  //           type: ArticleType.menu),
+  //           price: 12),
   //       quantity: 3);
   //   oe.promotion = Promotion(
   //       discountValue: 3, nameLong: "Stampit Fidélité", nameShort: "Stampit");
@@ -44,17 +42,28 @@ void main() async {
   //   oe.comment = "Sauce BBQ";
   //   oe.commentIsExtra = true;
   //   oe.extraPrice = 5;
+  //
+  //   OrderElement oe2 = OrderElement(
+  //       article: Article.other(
+  //           name: "Le beau bic",
+  //           price: 3),
+  //       quantity: 2);
+  //   oe2.promotion = null;
+  //   oe2.hasPromotion = false;
+  //   oe2.comment = "";
+  //   oe2.commentIsExtra = false;
+  //   oe2.extraPrice = 0;
+  //
+  //   oeList.add(oe2);
   //   oeList.add(oe);
-  //   firestoreService.addOrder(CustomerOrder(
-  //       id: "test",
+  //   firestoreService.updateOrder(CustomerOrder(
+  //       id: "9RtXjsNAktg1ghWa9zGV",
   //       date: DateTime.now(),
   //       orderElements: oeList,
   //       paymentMethod: PaymentMethod.cash, tableNumber: 2));
   // } catch (e) {
   //   print(e);
   // }
-
-  //firestoreService.deleteOrder("2CKpHBRr4O7gpMyQrTTL");
 
   runApp(const App());
 }
@@ -336,10 +345,19 @@ class _OrderBoxState extends State<OrderBox> {
   }
 }
 
-class OrderDetailed extends StatelessWidget {
+class OrderDetailed extends StatefulWidget {
   const OrderDetailed({super.key, required this.order});
 
   final CustomerOrder order;
+
+  @override
+  State<OrderDetailed> createState() => _OrderDetailedState();
+}
+
+class _OrderDetailedState extends State<OrderDetailed> {
+
+  bool hasOther = false;
+  bool hasPromotion = false;
 
   @override
   Widget build(BuildContext context) {
@@ -359,20 +377,50 @@ class OrderDetailed extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               OrderHeader(
-                tableNumber: order.tableNumber,
-                articleNumber: order.orderElements.length,
-                orderDate: order.date,
+                tableNumber: widget.order.tableNumber,
+                articleNumber: widget.order.orderElements.length,
+                orderDate: widget.order.date,
               ),
               TextDivider(text: "Menu", color: customColors.tertiary!),
               Column(
-                  children: order.orderElements.map((orderElement) {
-                return OrderLineElement(orderElement: orderElement);
+                  children: widget.order.orderElements.map((orderElement) {
+                if (orderElement.articleType == ArticleType.menu) {
+                  return OrderLineElement(orderElement: orderElement);
+                } else {
+                  return SizedBox.shrink();
+                }
               }).toList()),
-              TextDivider(text: "Autres", color: customColors.tertiary!),
-              OthersOrderLineElement(),
+              Column(
+                children: [
+                  Builder(
+                    builder: (context) {
+                      if(hasOther){
+                        return TextDivider(text: "Autres", color: customColors.tertiary!);
+                      }else{
+                        return SizedBox.shrink();
+                      }
+                    }
+                  ),
+                  Column(
+                      children: widget.order.orderElements.map((orderElement) {
+                    if (orderElement.articleType == ArticleType.other) {
+                      if(!hasOther) hasOther=true;
+                      return OthersOrderLineElement(
+                        productName: orderElement.articleName,
+                        productPrice: orderElement.articlePrice,
+                        quantity: orderElement.quantity,
+                      );
+                    } else {
+                      return SizedBox.shrink();
+                    }
+                  }).toList()),
+                ],
+              ),
               TextDivider(text: "Promotions", color: customColors.tertiary!),
               Promotions(),
-              GreatTotal(paymentMethod: order.paymentMethod, totalPrice: order.totalPrice),
+              GreatTotal(
+                  paymentMethod: widget.order.paymentMethod,
+                  totalPrice: widget.order.totalPrice),
             ],
           ),
         ),
@@ -631,10 +679,19 @@ class PromotionCard extends StatelessWidget {
 }
 
 class OthersOrderLineElement extends StatelessWidget {
-  const OthersOrderLineElement({super.key});
+  const OthersOrderLineElement(
+      {super.key,
+      required this.productName,
+      required this.productPrice,
+      required this.quantity});
+
+  final int quantity;
+  final String productName;
+  final double productPrice;
 
   @override
   Widget build(BuildContext context) {
+    final double totalPrice = productPrice * quantity;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Column(
@@ -645,16 +702,20 @@ class OthersOrderLineElement extends StatelessWidget {
             LittleCard(
                 littleCardColor: customColors.primary!,
                 leftMargin: 10.0,
-                text: "2"),
+                text: "$quantity"),
             LittleCard(
                 littleCardColor: customColors.primary!,
-                flex: 7,
-                text: "Bic, Quai des Bananes"),
+                flex: 5,
+                text: productName),
+            LittleCard(
+                littleCardColor: customColors.primary!,
+                flex: 2,
+                text: "à $productPrice€/p"),
             LittleCard(
                 littleCardColor: customColors.primary!,
                 flex: 3,
                 rightMargin: 10.0,
-                text: "26€"),
+                text: "$totalPrice€"),
           ],
         ),
       ],
