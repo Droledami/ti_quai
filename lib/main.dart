@@ -251,41 +251,28 @@ class _ScrollableOrderListState extends State<ScrollableOrderList> {
           children: widget.orders.map((order) {
             orderBoxId++;
             if (state is OrderSelected) {
-              return OrderBox(
-                order: order,
-                selectedOrderBoxId: state.selectedOrderId,
-                orderBoxId: orderBoxId,
-                changeSelection: (orderBoxId) {
-                  setState(() {
-                    BlocProvider.of<SelectedOrderBloc>(context)
-                        .add(SetSelectedOrder(orderBoxId));
-                  });
-                },
-                closeSelection: () {
+              if(orderBoxId == state.selectedOrderId){
+                return OrderDetailed(order: order, orderBoxId: orderBoxId, closeSelection: () {
                   setState(() {
                     BlocProvider.of<SelectedOrderBloc>(context)
                         .add(UnselectOrder());
                   });
-                },
-              );
+                });
+              }else{
+                return OrderSimple(order: order, changeSelection: (orderBoxId) {
+                  setState(() {
+                    BlocProvider.of<SelectedOrderBloc>(context)
+                        .add(SetSelectedOrder(orderBoxId));
+                  });
+                }, orderBoxId: orderBoxId);
+              }
             } else if (state is NoOrderSelected) {
-              return OrderBox(
-                order: order,
-                selectedOrderBoxId: -1,
-                orderBoxId: orderBoxId,
-                changeSelection: (orderBoxId) {
-                  setState(() {
-                    BlocProvider.of<SelectedOrderBloc>(context)
-                        .add(SetSelectedOrder(orderBoxId));
-                  });
-                },
-                closeSelection: () {
-                  setState(() {
-                    BlocProvider.of<SelectedOrderBloc>(context)
-                        .add(UnselectOrder());
-                  });
-                },
-              );
+              return OrderSimple(order: order, changeSelection: (orderBoxId) {
+                setState(() {
+                  BlocProvider.of<SelectedOrderBloc>(context)
+                      .add(SetSelectedOrder(orderBoxId));
+                });
+              }, orderBoxId: orderBoxId);
             } else {
               return SizedBox.shrink();
             }
@@ -373,43 +360,6 @@ class MenuButton extends StatelessWidget {
           color: customColors.primaryDark!,
           onPressed: () => {Scaffold.of(context).openDrawer()},
         );
-      }),
-    );
-  }
-}
-
-class OrderBox extends StatelessWidget {
-  const OrderBox(
-      {super.key,
-      required this.order,
-      required this.selectedOrderBoxId,
-      required this.orderBoxId,
-      required this.changeSelection,
-      required this.closeSelection});
-
-  final CustomerOrder order;
-  final int selectedOrderBoxId;
-  final int orderBoxId;
-  final Function changeSelection;
-  final Function closeSelection;
-
-  @override
-  Widget build(BuildContext context) {
-    print(orderBoxId);
-    print(selectedOrderBoxId);
-    return GestureDetector(
-      onTap: () {
-        changeSelection(orderBoxId);
-      },
-      child: Builder(builder: (context) {
-        if (selectedOrderBoxId == orderBoxId) {
-          return OrderDetailed(
-              order: order,
-              orderBoxId: orderBoxId,
-              closeSelection: closeSelection);
-        } else {
-          return OrderSimple(order: order);
-        }
       }),
     );
   }
@@ -1016,9 +966,11 @@ class LittleCard extends StatelessWidget {
 }
 
 class OrderSimple extends StatelessWidget {
-  const OrderSimple({super.key, required this.order});
+  const OrderSimple({super.key, required this.order, required this.changeSelection, required this.orderBoxId});
 
   final CustomerOrder order;
+  final int orderBoxId;
+  final Function changeSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -1028,77 +980,82 @@ class OrderSimple extends StatelessWidget {
         Theme.of(context).extension<CustomColors>()!;
     return Padding(
       padding: const EdgeInsets.only(left: 14, right: 14, bottom: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: customColors.cardQuarterTransparency!,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                contentPadding: const EdgeInsets.only(
-                    left: 10, right: 10, top: 0, bottom: 0),
-                leading: Text(
-                  'Table ${order.tableNumber}',
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 30,
+      child: GestureDetector(
+        onTap: (){
+          changeSelection(orderBoxId);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: customColors.cardQuarterTransparency!,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.only(
+                      left: 10, right: 10, top: 0, bottom: 0),
+                  leading: Text(
+                    'Table ${order.tableNumber}',
+                    style: TextStyle(
+                      height: 1,
+                      fontSize: 30,
+                    ),
                   ),
-                ),
-                title: Text(
-                  numberOfArticles > 1
-                      ? "$numberOfArticles articles"
-                      : "$numberOfArticles article",
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 24,
+                  title: Text(
+                    numberOfArticles > 1
+                        ? "$numberOfArticles articles"
+                        : "$numberOfArticles article",
+                    style: TextStyle(
+                      height: 1,
+                      fontSize: 24,
+                    ),
                   ),
-                ),
-                trailing: Text(
-                  orderTime,
-                  style: TextStyle(
-                    height: 1,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-              ListTile(
-                contentPadding: const EdgeInsets.only(
-                    left: 10, right: 10, top: 0, bottom: 0),
-                title: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: customColors.special!,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    "Règlement par ${order.paymentMethod.name}",
-                    textAlign: TextAlign.center,
+                  trailing: Text(
+                    orderTime,
                     style: TextStyle(
                       height: 1,
                       fontSize: 24,
                     ),
                   ),
                 ),
-                trailing: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: customColors.special!,
-                    borderRadius: BorderRadius.circular(7),
+                ListTile(
+                  contentPadding: const EdgeInsets.only(
+                      left: 10, right: 10, top: 0, bottom: 0),
+                  title: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: customColors.special!,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Text(
+                      "Règlement par ${order.paymentMethod.name}",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        height: 1,
+                        fontSize: 24,
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    "${order.totalPrice}€",
-                    style: TextStyle(
-                      height: 1,
-                      fontSize: 24,
+                  trailing: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: customColors.special!,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Text(
+                      "${order.totalPrice}€",
+                      style: TextStyle(
+                        height: 1,
+                        fontSize: 24,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
