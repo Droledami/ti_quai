@@ -205,14 +205,7 @@ class _HomescreenState extends State<Homescreen> {
                 ),
                 Expanded(
                   flex: 7,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: state.orders.map((order) {
-                        return OrderBox(order: order);
-                      }).toList(),
-                    ),
-                  ),
+                  child: ScrollableOrderList(orders: state.orders),
                 ),
                 //Keeps some space at the bottom of the screen for visibility
                 Expanded(flex: 1, child: SizedBox())
@@ -226,6 +219,44 @@ class _HomescreenState extends State<Homescreen> {
             return Container();
           }
         }),
+      ),
+    );
+  }
+}
+
+class ScrollableOrderList extends StatefulWidget {
+  const ScrollableOrderList({super.key, required this.orders});
+
+  final List<CustomerOrder> orders;
+
+  @override
+  State<ScrollableOrderList> createState() => _ScrollableOrderListState();
+}
+
+class _ScrollableOrderListState extends State<ScrollableOrderList> {
+  bool hasSelection = false;
+  int selectedOrder = -1;
+
+  @override
+  Widget build(BuildContext context) {
+    int orderBoxId = -1;
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: widget.orders.map((order) {
+          orderBoxId++;
+          return OrderBox(
+            order: order,
+            isSelected: (selectedOrder == orderBoxId),
+            orderBoxId: orderBoxId,
+            claimSelection: (id) {
+              setState(() {
+                selectedOrder = id;
+                hasSelection = true;
+              });
+            },
+          );
+        }).toList(),
       ),
     );
   }
@@ -313,29 +344,27 @@ class MenuButton extends StatelessWidget {
   }
 }
 
-class OrderBox extends StatefulWidget {
-  const OrderBox({super.key, required this.order});
+class OrderBox extends StatelessWidget {
+  const OrderBox(
+      {super.key,
+      required this.order,
+      required this.isSelected,
+      required this.orderBoxId,
+      required this.claimSelection});
 
   final CustomerOrder order;
-
-  @override
-  State<OrderBox> createState() => _OrderBoxState();
-}
-
-class _OrderBoxState extends State<OrderBox> {
-  bool _selected = false;
+  final bool isSelected;
+  final int orderBoxId;
+  final Function claimSelection;
 
   @override
   Widget build(BuildContext context) {
-    CustomerOrder order = widget.order;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selected = !_selected;
-        });
+        claimSelection(orderBoxId);
       },
       child: Builder(builder: (context) {
-        if (_selected) {
+        if (isSelected) {
           return OrderDetailed(order: order);
         } else {
           return OrderSimple(order: order);
