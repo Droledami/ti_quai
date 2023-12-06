@@ -5,6 +5,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
+import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
+import 'package:ti_quai/blocs/selectedOrder/selectedOrder_events.dart';
+import 'package:ti_quai/blocs/selectedOrder/selectedOrder_states.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import './theme.dart';
 import 'BeachGradientDecoration.dart';
@@ -77,6 +80,9 @@ class App extends StatelessWidget {
       providers: [
         BlocProvider<OrderBloc>(
             create: (context) => OrderBloc(FirestoreService())),
+        BlocProvider<SelectedOrderBloc>(
+          create: (context) => SelectedOrderBloc(),
+        )
       ],
       child: MaterialApp(
         theme: ThemeData.light().copyWith(extensions: <ThemeExtension<dynamic>>[
@@ -234,30 +240,58 @@ class ScrollableOrderList extends StatefulWidget {
 }
 
 class _ScrollableOrderListState extends State<ScrollableOrderList> {
-  bool hasSelection = false;
-  int selectedOrder = -1;
-
   @override
   Widget build(BuildContext context) {
     int orderBoxId = -1;
     return SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: widget.orders.map((order) {
-          orderBoxId++;
-          return OrderBox(
-            order: order,
-            isSelected: (selectedOrder == orderBoxId),
-            orderBoxId: orderBoxId,
-            claimSelection: (id) {
-              setState(() {
-                selectedOrder = id;
-                hasSelection = true;
-              });
-            },
-          );
-        }).toList(),
-      ),
+      child: BlocBuilder<SelectedOrderBloc, SelectedOrderState>(
+          builder: (context, state) {
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: widget.orders.map((order) {
+            orderBoxId++;
+            if (state is OrderSelected) {
+              return OrderBox(
+                order: order,
+                selectedOrderBoxId: state.selectedOrderId,
+                orderBoxId: orderBoxId,
+                changeSelection: (orderBoxId) {
+                  setState(() {
+                    BlocProvider.of<SelectedOrderBloc>(context)
+                        .add(SetSelectedOrder(orderBoxId));
+                  });
+                },
+                closeSelection: () {
+                  setState(() {
+                    BlocProvider.of<SelectedOrderBloc>(context)
+                        .add(UnselectOrder());
+                  });
+                },
+              );
+            } else if (state is NoOrderSelected) {
+              return OrderBox(
+                order: order,
+                selectedOrderBoxId: -1,
+                orderBoxId: orderBoxId,
+                changeSelection: (orderBoxId) {
+                  setState(() {
+                    BlocProvider.of<SelectedOrderBloc>(context)
+                        .add(SetSelectedOrder(orderBoxId));
+                  });
+                },
+                closeSelection: () {
+                  setState(() {
+                    BlocProvider.of<SelectedOrderBloc>(context)
+                        .add(UnselectOrder());
+                  });
+                },
+              );
+            } else {
+              return SizedBox.shrink();
+            }
+          }).toList(),
+        );
+      }),
     );
   }
 }
@@ -348,24 +382,31 @@ class OrderBox extends StatelessWidget {
   const OrderBox(
       {super.key,
       required this.order,
-      required this.isSelected,
+      required this.selectedOrderBoxId,
       required this.orderBoxId,
-      required this.claimSelection});
+      required this.changeSelection,
+      required this.closeSelection});
 
   final CustomerOrder order;
-  final bool isSelected;
+  final int selectedOrderBoxId;
   final int orderBoxId;
-  final Function claimSelection;
+  final Function changeSelection;
+  final Function closeSelection;
 
   @override
   Widget build(BuildContext context) {
+    print(orderBoxId);
+    print(selectedOrderBoxId);
     return GestureDetector(
       onTap: () {
-        claimSelection(orderBoxId);
+        changeSelection(orderBoxId);
       },
       child: Builder(builder: (context) {
-        if (isSelected) {
-          return OrderDetailed(order: order);
+        if (selectedOrderBoxId == orderBoxId) {
+          return OrderDetailed(
+              order: order,
+              orderBoxId: orderBoxId,
+              closeSelection: closeSelection);
         } else {
           return OrderSimple(order: order);
         }
@@ -375,9 +416,15 @@ class OrderBox extends StatelessWidget {
 }
 
 class OrderDetailed extends StatefulWidget {
-  const OrderDetailed({super.key, required this.order});
+  const OrderDetailed(
+      {super.key,
+      required this.order,
+      required this.orderBoxId,
+      required this.closeSelection});
 
   final CustomerOrder order;
+  final int orderBoxId;
+  final Function closeSelection;
 
   @override
   State<OrderDetailed> createState() => _OrderDetailedState();
@@ -408,6 +455,7 @@ class _OrderDetailedState extends State<OrderDetailed> {
                 tableNumber: widget.order.tableNumber,
                 articleNumber: widget.order.orderElements.length,
                 orderDate: widget.order.date,
+                closeSelection: widget.closeSelection,
               ),
               TextDivider(text: "Menu", color: customColors.tertiary!),
               Column(
@@ -532,11 +580,13 @@ class OrderHeader extends StatelessWidget {
       {super.key,
       required this.tableNumber,
       required this.articleNumber,
-      required this.orderDate});
+      required this.orderDate,
+      required this.closeSelection});
 
   final int tableNumber;
   final int articleNumber;
   final DateTime orderDate;
+  final Function closeSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +595,7 @@ class OrderHeader extends StatelessWidget {
         Theme.of(context).extension<CustomColors>()!;
     return GestureDetector(
       onTap: () {
-        print("close details"); //TODO: fermer la commande
+        closeSelection();
       },
       child: Container(
         padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),
