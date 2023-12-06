@@ -1,11 +1,6 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:ti_quai/firebase_options.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/CustomerOrder.dart';
-import 'order_bloc.dart';
-import 'order_events.dart';
 
 @immutable
 abstract class OrderState {}
@@ -18,6 +13,15 @@ class OrderLoaded extends OrderState{
   final List<CustomerOrder> orders;
 
   OrderLoaded(this.orders);
+
+  CustomerOrder getOrder(String orderId){
+    for(CustomerOrder order in orders){
+      if(orderId == order.id){
+        return order;
+      }
+    }
+    throw Exception("Couldn't find order with ID: $orderId");
+  }
 }
 
 class OrderOperationSuccess extends OrderState{

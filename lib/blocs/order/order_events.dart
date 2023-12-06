@@ -1,9 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/CustomerOrder.dart';
-import 'order_bloc.dart';
-import 'order_states.dart';
 
 @immutable
 abstract class OrderEvent{}

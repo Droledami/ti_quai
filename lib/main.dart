@@ -1,12 +1,12 @@
 import 'dart:ui';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
+import 'package:ti_quai/models/CustomerOrder.dart';
 import './theme.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
@@ -15,6 +15,7 @@ import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/TitleHeader.dart';
+import 'custom_widgets/OrderToEdit.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -100,7 +101,7 @@ class App extends StatelessWidget {
             cardHalfTransparency: Color(0x80FFFFFF), //White 50% alpha
           ),
         ]),
-        home: Homescreen(),
+        home: EditOrderScreen(orderId: "wOna31V3kEO6vqwiqATY"),
       ),
     );
   }
@@ -132,7 +133,10 @@ class _HomescreenState extends State<Homescreen> {
         appBar: AppBar(
           leading: MenuButton(customColors: customColors),
           centerTitle: true,
-          title: TitleHeader(customColors: customColors, title: "Accueil",),
+          title: TitleHeader(
+            customColors: customColors,
+            title: "Accueil",
+          ),
           backgroundColor: Colors.white.withOpacity(0.0),
         ),
         drawer: const QuaiDrawer(),
@@ -175,3 +179,75 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 }
+
+class EditOrderScreen extends StatefulWidget {
+  const EditOrderScreen({super.key, required this.orderId});
+
+  final String orderId;
+
+  @override
+  State<EditOrderScreen> createState() => _EditOrderScreenState();
+}
+
+class _EditOrderScreenState extends State<EditOrderScreen> {
+  @override
+  void initState() {
+    BlocProvider.of<OrderBloc>(context).add(LoadOrder());
+    super.initState();
+  }
+
+  late CustomerOrder order;
+
+  @override
+  Widget build(BuildContext context) {
+    final OrderBloc _orderBloc = BlocProvider.of<OrderBloc>(context);
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Container(
+      decoration: BeachGradientDecoration(),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        //Allows parent container's bg to display
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          //leading: BackButton(), TODO:ceci
+          centerTitle: true,
+          title: TitleHeader(
+            customColors: customColors,
+            title: "Modifier une commande",
+          ),
+          backgroundColor: Colors.white.withOpacity(0.0),
+        ),
+        body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
+          if (state is OrderLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (state is OrderLoaded) {
+            order = state.getOrder(widget.orderId);
+            return Column(
+              children: [
+                const SizedBox(
+                  height: 65,
+                ),
+                Expanded(
+                  flex: 7,
+                  child: OrderToEdit(order: order),
+                ),
+                //Keeps some space at the bottom of the screen for visibility
+                Expanded(flex: 1, child: SizedBox())
+              ],
+            );
+          } else if (state is OrderOperationSuccess) {
+            return Container();
+          } else if (state is OrderError) {
+            return Container();
+          } else {
+            return Container();
+          }
+        }),
+      ),
+    );
+  }
+}
+

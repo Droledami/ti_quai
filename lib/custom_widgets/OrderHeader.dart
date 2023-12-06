@@ -10,12 +10,12 @@ class OrderHeader extends StatelessWidget {
         required this.tableNumber,
         required this.articleNumber,
         required this.orderDate,
-        required this.closeSelection});
+        this.closeSelection});
 
   final int tableNumber;
   final int articleNumber;
   final DateTime orderDate;
-  final Function closeSelection;
+  final Function? closeSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class OrderHeader extends StatelessWidget {
     Theme.of(context).extension<CustomColors>()!;
     return GestureDetector(
       onTap: () {
-        closeSelection();
+        if(closeSelection != null) closeSelection!();
       },
       child: Container(
         padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),

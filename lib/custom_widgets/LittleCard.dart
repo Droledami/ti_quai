@@ -10,9 +10,11 @@ class LittleCard extends StatelessWidget {
         this.flex = 1,
         this.empty = false,
         this.text = "",
-        this.height = 20,
+        this.height = 24,
         this.fontSize = 16,
         this.fontWeight = FontWeight.w900,
+        this.maxLines = 1,
+        this.textOverflow = TextOverflow.clip,
         required this.littleCardColor});
 
   final double leftMargin;
@@ -23,6 +25,8 @@ class LittleCard extends StatelessWidget {
   final double height;
   final double fontSize;
   final FontWeight fontWeight;
+  final int maxLines;
+  final TextOverflow textOverflow;
   final Color littleCardColor;
 
   @override
@@ -47,14 +51,16 @@ class LittleCard extends StatelessWidget {
             color: littleCardColor,
             borderRadius: BorderRadius.circular(7),
           ),
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.clip,
-            softWrap: false,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontWeight: fontWeight, height: 1, fontSize: fontSize),
+          child: Center(
+            child: Text(
+              text,
+              maxLines: maxLines,
+              overflow: textOverflow,
+              softWrap: false,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontWeight: fontWeight, height: 1, fontSize: fontSize),
+            ),
           ),
         ),
       ),
