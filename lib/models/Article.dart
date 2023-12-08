@@ -8,6 +8,8 @@ class Article {
   static const String keyType = "type";
   static const String keyPrice = "price";
 
+  Article.empty({required this.type}) : alpha = "", number = -1, subAlpha="", name="", price=-1;
+
   Article.menu({
     required this.alpha,
     required this.number,

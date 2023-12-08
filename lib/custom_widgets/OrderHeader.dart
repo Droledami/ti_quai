@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../enums/EntryType.dart';
 import '../functions/functions.dart';
 import '../theme.dart';
+import 'EntryBox.dart';
 import 'LittleCard.dart';
 
 class OrderHeader extends StatelessWidget {
   const OrderHeader(
       {super.key,
-        required this.tableNumber,
-        required this.articleNumber,
-        required this.orderDate,
-        this.closeSelection});
+      required this.tableNumber,
+      required this.articleNumber,
+      required this.orderDate,
+      required this.isEditMode,
+      this.closeSelection});
 
   final int tableNumber;
   final int articleNumber;
   final DateTime orderDate;
+  final bool isEditMode;
   final Function? closeSelection;
 
   @override
   Widget build(BuildContext context) {
     final orderTime = getHourAndMinuteString(orderDate);
     final CustomColors customColors =
-    Theme.of(context).extension<CustomColors>()!;
+        Theme.of(context).extension<CustomColors>()!;
     return GestureDetector(
       onTap: () {
-        if(closeSelection != null) closeSelection!();
+        if (closeSelection != null) closeSelection!();
       },
       child: Container(
         padding: EdgeInsets.only(left: 0, right: 0, top: 2, bottom: 5),
@@ -41,12 +45,32 @@ class OrderHeader extends StatelessWidget {
           children: [
             ListTile(
               contentPadding:
-              const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
-              leading: Text(
-                'Table $tableNumber',
-                style: TextStyle(
-                  height: 1,
-                  fontSize: 30,
+                  const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
+              leading: SizedBox(
+                width: isEditMode ? 135 : 110,
+                child: Row(
+                  children: [
+                    Text(
+                      'Table ${isEditMode ? "" : tableNumber}',
+                      style: TextStyle(
+                        height: 1,
+                        fontSize: 30,
+                      ),
+                    ),
+                    Builder(builder: (context) {
+                      if (isEditMode) {
+                        return EntryBox(
+                          orderEntryType: OrderEntry.tableNumber,
+                          initialValue:
+                              tableNumber <= 0 ? "" : tableNumber.toString(),
+                          maxLength: 2,
+                          placeholder: "n°",
+                        );
+                      } else {
+                        return SizedBox.shrink();
+                      }
+                    }),
+                  ],
                 ),
               ),
               title: Text(

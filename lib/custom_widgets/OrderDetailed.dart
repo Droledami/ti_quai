@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ti_quai/main.dart';
 
 import '../enums/ArticleType.dart';
 import '../models/CustomerOrder.dart';
@@ -51,59 +52,70 @@ class _OrderDetailedState extends State<OrderDetailed> {
                 articleNumber: widget.order.orderElements.length,
                 orderDate: widget.order.date,
                 closeSelection: widget.closeSelection,
+                isEditMode: false,
               ),
-              TextDivider(text: "Menu", color: customColors.tertiary!),
-              Column(
-                  children: widget.order.orderElements.map((orderElement) {
-                    if (orderElement.articleType == ArticleType.menu) {
-                      return OrderLineElement(orderElement: orderElement);
-                    } else {
-                      return SizedBox.shrink();
-                    }
-                  }).toList()),
-              Column(
-                children: [
-                  Builder(builder: (context) {
-                    if (hasOther) {
-                      return TextDivider(
-                          text: "Autres", color: customColors.tertiary!);
-                    } else {
-                      return SizedBox.shrink();
-                    }
-                  }),
-                  Column(
-                      children: widget.order.orderElements.map((orderElement) {
-                        if (orderElement.articleType == ArticleType.other) {
-                          if (!hasOther) hasOther = true;
-                          return OthersOrderLineElement(
-                            productName: orderElement.articleName,
-                            productPrice: orderElement.articlePrice,
-                            quantity: orderElement.quantity,
-                          );
-                        } else {
-                          return SizedBox.shrink();
-                        }
-                      }).toList()),
-                ],
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: (){
+                  Navigator.pushNamed(context, "/order", arguments: EditOrAddScreenArguments(orderId: widget.order.id, isEditMode: true));
+                },
+                child: Column(
+                  children: [
+                    TextDivider(text: "Menu", color: customColors.tertiary!),
+                    Column(
+                        children: widget.order.orderElements.map((orderElement) {
+                          if (orderElement.articleType == ArticleType.menu) {
+                            return OrderLineElement(orderElement: orderElement);
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }).toList()),
+                    Column(
+                      children: [
+                        Builder(builder: (context) {
+                          if (hasOther) {
+                            return TextDivider(
+                                text: "Autres", color: customColors.tertiary!);
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }),
+                        Column(
+                            children: widget.order.orderElements.map((orderElement) {
+                              if (orderElement.articleType == ArticleType.other) {
+                                if (!hasOther) hasOther = true;
+                                return OthersOrderLineElement(
+                                  productName: orderElement.articleName,
+                                  productPrice: orderElement.articlePrice,
+                                  quantity: orderElement.quantity,
+                                );
+                              } else {
+                                return SizedBox.shrink();
+                              }
+                            }).toList()),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Builder(builder: (context) {
+                          if (hasPromotion) {
+                            return TextDivider(
+                                text: "Promotions", color: customColors.tertiary!);
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }),
+                        PromotionsSummary(
+                            totalDiscount: widget.order.totalDiscount,
+                            orderElements: widget.order.orderElements),
+                      ],
+                    ),
+                    GreatTotal(
+                        paymentMethod: widget.order.paymentMethod,
+                        totalPrice: widget.order.totalPrice),
+                  ],
+                ),
               ),
-              Column(
-                children: [
-                  Builder(builder: (context) {
-                    if (hasPromotion) {
-                      return TextDivider(
-                          text: "Promotions", color: customColors.tertiary!);
-                    } else {
-                      return SizedBox.shrink();
-                    }
-                  }),
-                  PromotionsSummary(
-                      totalDiscount: widget.order.totalDiscount,
-                      orderElements: widget.order.orderElements),
-                ],
-              ),
-              GreatTotal(
-                  paymentMethod: widget.order.paymentMethod,
-                  totalPrice: widget.order.totalPrice),
             ],
           ),
         ),

@@ -18,6 +18,13 @@ class CustomerOrder {
       required this.orderElements,
       required this.paymentMethod});
 
+  CustomerOrder.createNew()
+      : id = "toBeDefined",
+        tableNumber = -1,
+        date = DateTime.now(),
+        orderElements = List<OrderElement>.empty(growable: true),
+        paymentMethod = PaymentMethod.bancontact;
+
   String id;
   int tableNumber;
   DateTime date;
@@ -38,7 +45,7 @@ class CustomerOrder {
   }
 
   //TODO: Un peu chiant ça, je le calcule déjà au dessus, allô comment faire ?
-  double get totalDiscount{
+  double get totalDiscount {
     double totalDiscount = 0;
     for (OrderElement orderElement in orderElements) {
       if (orderElement.hasPromotion && orderElement.promotion != null) {
@@ -48,7 +55,7 @@ class CustomerOrder {
     return totalDiscount;
   }
 
-  bool get hasAnyPromotions{
+  bool get hasAnyPromotions {
     for (OrderElement orderElement in orderElements) {
       if (orderElement.hasPromotion && orderElement.promotion != null) {
         return true;
@@ -56,5 +63,4 @@ class CustomerOrder {
     }
     return false;
   }
-
 }

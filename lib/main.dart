@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
+import 'package:ti_quai/enums/PaymentMethod.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import 'package:ti_quai/models/CustomerOrder.dart';
+import 'package:ti_quai/models/OrderElement.dart';
 import './theme.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
@@ -101,7 +103,11 @@ class App extends StatelessWidget {
             cardHalfTransparency: Color(0x80FFFFFF), //White 50% alpha
           ),
         ]),
-        home: EditOrderScreen(orderId: "wOna31V3kEO6vqwiqATY"),
+        initialRoute: "/home",
+        routes: {
+          "/home": (context) => Homescreen(),
+          "/order": (context) => EditOrAddOrderScreen(),
+        },
       ),
     );
   }
@@ -141,7 +147,11 @@ class _HomescreenState extends State<Homescreen> {
         ),
         drawer: const QuaiDrawer(),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, "/order",
+                arguments: EditOrAddScreenArguments(
+                    orderId: EditOrAddScreenArguments.keyDefinedLater, isEditMode: true));
+          },
           backgroundColor: customColors.secondary!,
           child: const Icon(
             Icons.add,
@@ -180,16 +190,23 @@ class _HomescreenState extends State<Homescreen> {
   }
 }
 
-class EditOrderScreen extends StatefulWidget {
-  const EditOrderScreen({super.key, required this.orderId});
-
+class EditOrAddScreenArguments {
   final String orderId;
+  final bool isEditMode;
 
-  @override
-  State<EditOrderScreen> createState() => _EditOrderScreenState();
+  static const String keyDefinedLater = "-definedLater-";
+
+  EditOrAddScreenArguments({required this.orderId, required this.isEditMode});
 }
 
-class _EditOrderScreenState extends State<EditOrderScreen> {
+class EditOrAddOrderScreen extends StatefulWidget {
+  const EditOrAddOrderScreen({super.key});
+
+  @override
+  State<EditOrAddOrderScreen> createState() => _EditOrAddOrderScreenState();
+}
+
+class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
   @override
   void initState() {
     BlocProvider.of<OrderBloc>(context).add(LoadOrder());
@@ -200,6 +217,8 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as EditOrAddScreenArguments;
     final OrderBloc _orderBloc = BlocProvider.of<OrderBloc>(context);
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
@@ -214,9 +233,17 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
           centerTitle: true,
           title: TitleHeader(
             customColors: customColors,
-            title: "Modifier une commande",
+            title: "${args.isEditMode ? "Modifier" : "Ajouter"} une commande",
           ),
           backgroundColor: Colors.white.withOpacity(0.0),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {  },
+          backgroundColor: customColors.secondary!,
+          child: const Icon(
+            Icons.check_outlined,
+            size: 40,
+          ),
         ),
         body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
           if (state is OrderLoading) {
@@ -224,7 +251,11 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
               child: CircularProgressIndicator(),
             );
           } else if (state is OrderLoaded) {
-            order = state.getOrder(widget.orderId);
+            if (args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+              order = state.getOrder(args.orderId);
+            } else {
+              order = CustomerOrder.createNew();
+            }
             return Column(
               children: [
                 const SizedBox(
@@ -232,10 +263,13 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                 ),
                 Expanded(
                   flex: 7,
-                  child: OrderToEdit(order: order),
+                  child: SingleChildScrollView(
+                      child: OrderToEditOrAdd(
+                    order: order,
+                    isEditMode: args.isEditMode,
+                  )),
                 ),
-                //Keeps some space at the bottom of the screen for visibility
-                Expanded(flex: 1, child: SizedBox())
+                Expanded(flex: 1, child: SizedBox()),
               ],
             );
           } else if (state is OrderOperationSuccess) {
@@ -250,4 +284,3 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
     );
   }
 }
-
