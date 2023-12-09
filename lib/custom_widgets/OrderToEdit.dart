@@ -10,6 +10,7 @@ import 'package:ti_quai/models/Article.dart';
 import '../enums/ArticleType.dart';
 import '../models/CustomerOrder.dart';
 import '../models/OrderElement.dart';
+import '../models/Promotion.dart';
 import '../theme.dart';
 import 'GreatTotal.dart';
 import 'LittleCard.dart';
@@ -203,13 +204,32 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                 ),
               ],
             ),
-            SizedIconButton(
-              onTap: () {
-                print("Ajouter une promotion");
-              },
-              color: customColors.secondary!,
-              spreadColor: customColors.secondaryLight!,
-              iconData: Icons.add,
+            Builder(
+              builder: (context) {
+                if(addingPromotion){
+                return AddPromotionForm(
+                    onCancel: () { setState(() {
+                      addingPromotion = false;
+                    });}, onConfirmAdd: (promotion, articleRef) {
+                      print('${promotion.nameLong} ${promotion.discountValue} articleRef: $articleRef');
+                      setState(() {
+                        addingPromotion = false;
+                      });
+                      //TODO: Ajouter la promotion dans l'orderElement désigné par l'article associé
+                       });
+                }else{
+                  return SizedIconButton(
+                    onTap: () {
+                      setState(() {
+                        addingPromotion = true;
+                      });
+                    },
+                    color: customColors.secondary!,
+                    spreadColor: customColors.secondaryLight!,
+                    iconData: Icons.add,
+                  );
+                }
+              }
             ),
             GreatTotal(
                 paymentMethod: widget.order.paymentMethod,
@@ -254,15 +274,15 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
     super.initState();
     _quantityController.text = "1";
     _quantityController.addListener(() {
-      if(int.tryParse(_quantityController.text)!=null){
-      orderElement.quantity = int.parse(_quantityController.text);
+      if (int.tryParse(_quantityController.text) != null) {
+        orderElement.quantity = int.parse(_quantityController.text);
       }
     });
     _alphaController.addListener(() {
       orderElement.article.alpha = _alphaController.text;
     });
     _numberController.addListener(() {
-      if(int.tryParse(_numberController.text)!=null){
+      if (int.tryParse(_numberController.text) != null) {
         orderElement.article.number = int.parse(_numberController.text);
       }
     });
@@ -270,9 +290,10 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
       orderElement.article.subAlpha = _subAlphaController.text;
     });
     _extraPriceController.addListener(() {
-      if(!RegExp(r"^[0-9]+€?").hasMatch(_extraPriceController.text)){
+      if (!RegExp(r"^[0-9]+€?").hasMatch(_extraPriceController.text)) {
         _extraPriceController.text = "";
-      }else if(_extraPriceController.text.isNotEmpty && !_extraPriceController.text.contains("€")){
+      } else if (_extraPriceController.text.isNotEmpty &&
+          !_extraPriceController.text.contains("€")) {
         String content = _extraPriceController.text;
         _extraPriceController.text = "$content€";
       }
@@ -293,9 +314,8 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: customColors.primaryDark!, width: 3)),
-            child: Builder(
-              builder: (context) {
-                if(!addingComment && !addingExtra){
+            child: Builder(builder: (context) {
+              if (!addingComment && !addingExtra) {
                 return Column(
                   children: [
                     Row(
@@ -358,7 +378,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                             orderElement.comment = _commentController.text;
                             orderElement.commentIsExtra = false;
                             setState(() {
-                              addingComment= true;
+                              addingComment = true;
                             });
                           },
                         ),
@@ -385,53 +405,228 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                     )
                   ],
                 );
-                }else if(addingComment || addingExtra){
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text("${addingExtra ? "Supplément" : "Commentaire"} pour l'élément: ${orderElement.articleReference}"),
-                      Row(
-                        children: [
-                          EntryBox(orderEntryType: OrderEntry.text, flex: 4, maxLength: 150, lines: addingExtra ? 1 : 2, textAlign: TextAlign.left, placeholder: "${addingExtra ? "Supplément" : "Commentaire"}...", textEditingController: _commentController, marginLeft: 10,),
-                          Builder(builder: (context){
-                            if(addingExtra){
-                              return EntryBox(orderEntryType: OrderEntry.price, flex: 1, maxLength: 2, placeholder: "Prix", textEditingController: _extraPriceController, marginLeft: 6,);
-                            }else{
-                              return SizedBox.shrink();
-                            }
-                          })
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          FlexIconButton(onTap: (){
+              } else if (addingComment || addingExtra) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                        "${addingExtra ? "Supplément" : "Commentaire"} pour l'élément: ${orderElement.articleReference}"),
+                    Row(
+                      children: [
+                        EntryBox(
+                          orderEntryType: OrderEntry.text,
+                          flex: 4,
+                          maxLength: 150,
+                          lines: addingExtra ? 1 : 2,
+                          textAlign: TextAlign.left,
+                          placeholder:
+                              "${addingExtra ? "Supplément" : "Commentaire"}...",
+                          textEditingController: _commentController,
+                          marginLeft: 10,
+                        ),
+                        Builder(builder: (context) {
+                          if (addingExtra) {
+                            return EntryBox(
+                              orderEntryType: OrderEntry.price,
+                              flex: 1,
+                              maxLength: 2,
+                              placeholder: "Prix",
+                              textEditingController: _extraPriceController,
+                              marginLeft: 6,
+                            );
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        })
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        FlexIconButton(
+                          onTap: () {
                             setState(() {
                               addingComment = false;
                               addingExtra = false;
                             });
-                          }, color: customColors.primary!, spreadColor: customColors.primaryDark!, iconData: Icons.backspace, marginLeft: 10,),
-                          Expanded(flex: 2, child: SizedBox.shrink()),
-                          FlexIconButton(onTap: (){
+                          },
+                          color: customColors.primary!,
+                          spreadColor: customColors.primaryDark!,
+                          iconData: Icons.backspace,
+                          marginLeft: 10,
+                        ),
+                        Expanded(flex: 2, child: SizedBox.shrink()),
+                        FlexIconButton(
+                          onTap: () {
                             orderElement.comment = _commentController.text;
-                            if(addingExtra){
-                              String extraPriceStr = _extraPriceController.text.replaceFirst("€", "", 1);
-                              orderElement.extraPrice = double.parse(extraPriceStr);
+                            if (addingExtra) {
+                              String extraPriceStr = _extraPriceController.text
+                                  .replaceFirst("€", "", 1);
+                              orderElement.extraPrice =
+                                  double.parse(extraPriceStr);
                             }
                             setState(() {
                               addingComment = false;
                               addingExtra = false;
                             });
-                          }, color: customColors.primary!, spreadColor: customColors.primaryDark!, iconData: Icons.add,),
-                        ],
-                      )
-                    ],
-                  );
-                }else if(addingExtra && addingComment){
-                  throw Exception("State addingExtra and addingComment are mutually exclusive, logic within widget AddOrderElementForm is wrong");
-                }else{
-                  throw Exception("Unexpected error");
-                }
+                          },
+                          color: customColors.primary!,
+                          spreadColor: customColors.primaryDark!,
+                          iconData: Icons.add,
+                        ),
+                      ],
+                    )
+                  ],
+                );
+              } else if (addingExtra && addingComment) {
+                throw Exception(
+                    "State addingExtra and addingComment are mutually exclusive, logic within widget AddOrderElementForm is wrong");
+              } else {
+                throw Exception("Unexpected error");
               }
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AddPromotionForm extends StatefulWidget {
+  const AddPromotionForm(
+      {super.key, required this.onCancel, required this.onConfirmAdd});
+
+  final Function onCancel;
+  final Function(Promotion, String) onConfirmAdd;
+
+  @override
+  State<AddPromotionForm> createState() => _AddPromotionFormState();
+}
+
+class _AddPromotionFormState extends State<AddPromotionForm> {
+  final _discountValueController = TextEditingController();
+  final _promotionNameController = TextEditingController();
+  final _linkedArticleController = TextEditingController();
+
+  Promotion promotion = Promotion(discountValue: 0, nameLong: "", nameShort: "");
+
+  @override
+  void initState() {
+    super.initState();
+    _promotionNameController.addListener(() {
+      promotion.nameLong = _promotionNameController.text;
+    });
+    //forces -XX€ format and always sets cursor position at before last
+    _discountValueController.addListener(() {
+      if (RegExp(r"^-?[1-9][0-9]*€?$").hasMatch(_discountValueController.text) &&
+          _discountValueController.text.isNotEmpty) {
+        String content = _discountValueController.text;
+        if (!content.contains("-")) {
+          content = "-$content";
+        }
+        if (!content.contains("€")) {
+          content = "$content€";
+        }
+        _discountValueController.value = _discountValueController.value
+            .copyWith(
+                text: content,
+                selection: TextSelection(
+                    baseOffset: content.length - 1,
+                    extentOffset: content.length - 1));
+        double discountValue = double.parse(content.substring(1,content.length - 1));
+        promotion.discountValue = discountValue;
+      } else {
+        _discountValueController.text = "";
+      }
+    });
+    //Forces case specific format like A followed by any number with the optionnal subalpha (ex: A326b or Z78)
+    _linkedArticleController.addListener(() {
+      if (RegExp(r"^[a-zA-Z][0-9]*[a-zA-Z]?$")
+          .hasMatch(_linkedArticleController.text)&& _linkedArticleController.text.isNotEmpty) {
+        if (RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
+            .hasMatch(_linkedArticleController.text)&& _linkedArticleController.text.length > 1) {
+          String content = _linkedArticleController.text;
+          if(content.length > 2){
+            String contentUpper = content.substring(0, content.length - 1).toUpperCase();
+            String contentLower = content.substring(content.length - 1, content.length).toLowerCase();
+            content = contentUpper + contentLower;
+          }
+          _linkedArticleController.value = _linkedArticleController.value.copyWith(text: content, selection: TextSelection(baseOffset: content.length, extentOffset: content.length));
+        }else if(RegExp(r"^.[a-zA-Z]$").hasMatch(_linkedArticleController.text)){
+          _linkedArticleController.text = "";
+        }
+      }else{
+        _linkedArticleController.text = "";
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Form(
+      child: Flexible(
+        fit: FlexFit.loose,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10, right: 10),
+          child: Container(
+            padding: EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: customColors.primaryDark!, width: 3)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Ajout d'une promotion",
+                ),
+                EntryBox(
+                  orderEntryType: OrderEntry.text,
+                  maxLength: 80,
+                  placeholder: "Nom de la promotion...",
+                  textEditingController: _promotionNameController,
+                  marginLeft: 10,
+                ),
+                Row(
+                  children: [
+                    EntryBox(
+                      flex: 4,
+                      orderEntryType: OrderEntry.text,
+                      maxLength: 10,
+                      placeholder: "Article associé (ex:A2b)",
+                      textEditingController: _linkedArticleController,
+                      marginLeft: 10,
+                    ),
+                    EntryBox(
+                      flex: 1,
+                      orderEntryType: OrderEntry.price,
+                      maxLength: 4,
+                      placeholder: "-?€",
+                      textEditingController: _discountValueController,
+                      marginLeft: 10,
+                    )
+                  ],
+                ),
+                Row(
+                  children: [
+                    FlexIconButton(
+                      onTap: () => widget.onCancel(),
+                      color: customColors.secondary!,
+                      spreadColor: customColors.secondaryLight!,
+                      iconData: Icons.backspace,
+                      marginLeft: 10,
+                    ),
+                    Expanded(flex: 2, child: SizedBox.shrink()),
+                    FlexIconButton(
+                      onTap: () => widget.onConfirmAdd(promotion, _linkedArticleController.text),
+                      color: customColors.secondary!,
+                      spreadColor: customColors.secondaryLight!,
+                      iconData: Icons.add,
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
         ),

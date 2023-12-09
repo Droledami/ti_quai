@@ -1,5 +1,6 @@
 //The full order containing every order Element and holding the final price accounting all quantities and promotions
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
 
 import 'OrderElement.dart';
@@ -62,5 +63,13 @@ class CustomerOrder {
       }
     }
     return false;
+  }
+
+  OrderElement? getOrderElementByRef(String ref){
+    for(OrderElement orderElement in orderElements){
+      if(orderElement.articleReference == ref){
+        return orderElement;
+      }
+    }
   }
 }
