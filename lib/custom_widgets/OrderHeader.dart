@@ -13,13 +13,15 @@ class OrderHeader extends StatelessWidget {
       required this.articleNumber,
       required this.orderDate,
       required this.isEditMode,
-      this.closeSelection});
+        this.textEditingController,
+      this.closeSelection}) : assert (((textEditingController !=null && isEditMode) || !isEditMode), "If isEditMode is true, then a textEditingController is required, if a controller is set but isEditMode is set to false, the controller will be useless.");
 
   final int tableNumber;
   final int articleNumber;
   final DateTime orderDate;
   final bool isEditMode;
   final Function? closeSelection;
+  final TextEditingController? textEditingController;
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +62,8 @@ class OrderHeader extends StatelessWidget {
                     Builder(builder: (context) {
                       if (isEditMode) {
                         return EntryBox(
+                          textEditingController: textEditingController!,
                           orderEntryType: OrderEntry.tableNumber,
-                          initialValue:
-                              tableNumber <= 0 ? "" : tableNumber.toString(),
                           maxLength: 2,
                           placeholder: "n°",
                         );

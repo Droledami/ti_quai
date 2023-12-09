@@ -52,49 +52,53 @@ class OrderElement {
   Promotion? promotion;
 
   double get price {
-    return article.price * quantity - extraPrice;
+    return article.price * quantity + extraPrice;
   }
 
-  String get articleName{
+  String get articleReference {
+    return "${article.alpha.isEmpty ? "?" : article.alpha}${article.number.isNegative ? "?" : article.number.toString()}${article.subAlpha}";
+  }
+
+  String get articleName {
     return article.name;
   }
 
-  String get articleAlpha{
+  String get articleAlpha {
     return article.alpha;
   }
 
-  String get articleSubAlpha{
+  String get articleSubAlpha {
     return article.subAlpha;
   }
 
-  int get articleNumber{
+  int get articleNumber {
     return article.number;
   }
 
-  ArticleType get articleType{
+  ArticleType get articleType {
     return article.type;
   }
 
-  double get articlePrice{
+  double get articlePrice {
     return article.price;
   }
 
-  String? get promotionNameLong{
-    if(promotion != null){
+  String? get promotionNameLong {
+    if (promotion != null) {
       return promotion!.nameLong;
     }
     return null;
   }
 
-  String? get promotionNameShort{
-    if(promotion != null){
+  String? get promotionNameShort {
+    if (promotion != null) {
       return promotion!.nameShort;
     }
     return null;
   }
 
-  double? get promotionDiscountValue{
-    if(promotion != null){
+  double? get promotionDiscountValue {
+    if (promotion != null) {
       return promotion!.discountValue;
     }
     return null;
