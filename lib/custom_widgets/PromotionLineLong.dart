@@ -24,7 +24,7 @@ class PromotionLineLong extends StatelessWidget {
                 littleCardColor: customColors.secondary!,
                 leftMargin: 10.0,
                 flex: 6,
-                text: promotion.nameLong),
+                text: promotion.name),
             LittleCard(
                 littleCardColor: customColors.secondary!,
                 flex: 2,

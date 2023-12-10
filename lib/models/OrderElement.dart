@@ -83,16 +83,9 @@ class OrderElement {
     return article.price;
   }
 
-  String? get promotionNameLong {
+  String? get promotionName {
     if (promotion != null) {
-      return promotion!.nameLong;
-    }
-    return null;
-  }
-
-  String? get promotionNameShort {
-    if (promotion != null) {
-      return promotion!.nameShort;
+      return promotion!.name;
     }
     return null;
   }

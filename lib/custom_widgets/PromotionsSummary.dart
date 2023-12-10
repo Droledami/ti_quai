@@ -24,7 +24,7 @@ class PromotionsSummary extends StatelessWidget {
           children: orderElements.map((orderElement) {
             if (orderElement.hasPromotion && orderElement.promotion != null) {
               return PromotionCard(
-                  promotionName: orderElement.promotion!.nameShort,
+                  promotionName: orderElement.promotion!.name,
                   discountValue: orderElement.promotion!.discountValue);
             } else if (orderElement.hasPromotion &&
                 orderElement.promotion == null) {
@@ -36,7 +36,7 @@ class PromotionsSummary extends StatelessWidget {
               print(
                   "Warning, a promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
               return PromotionCard(
-                  promotionName: orderElement.promotion!.nameShort,
+                  promotionName: orderElement.promotion!.name,
                   discountValue: orderElement.promotion!.discountValue);
             } else {
               return SizedBox();

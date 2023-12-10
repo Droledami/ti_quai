@@ -212,7 +212,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   });
                 }, onConfirmAdd: (promotion, articleRef) {
                   print(
-                      '${promotion.nameLong} ${promotion.discountValue} articleRef: $articleRef');
+                      '${promotion.name} ${promotion.discountValue} articleRef: $articleRef');
                   setState(() {
                     addingPromotion = false;
                   });
@@ -536,13 +536,13 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
   final _addPromotionFormKey = GlobalKey<FormState>();
 
   Promotion promotion =
-      Promotion(discountValue: 0, nameLong: "", nameShort: "");
+      Promotion(discountValue: 0, name: "");
 
   @override
   void initState() {
     super.initState();
     _promotionNameController.addListener(() {
-      promotion.nameLong = _promotionNameController.text;
+      promotion.name = _promotionNameController.text;
     });
     //forces -XX€ format and always sets cursor position at before last
     _discountValueController.addListener(() {

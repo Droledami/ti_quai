@@ -61,8 +61,7 @@ class FirestoreService {
       promotion = Promotion(
           discountValue: oe[OrderElement.keyPromotion]
               [Promotion.keyDiscountValue],
-          nameLong: oe[OrderElement.keyPromotion][Promotion.keyNameLong],
-          nameShort: oe[OrderElement.keyPromotion][Promotion.keyNameShort]);
+          name: oe[OrderElement.keyPromotion][Promotion.keyName],);
       orderElementToAdd.hasPromotion = true;
       orderElementToAdd.promotion = promotion;
     }
@@ -131,8 +130,7 @@ class FirestoreService {
 
     if (oe.hasPromotion) {
       promMap[Promotion.keyDiscountValue] = oe.promotionDiscountValue;
-      promMap[Promotion.keyNameLong] = oe.promotionNameLong;
-      promMap[Promotion.keyNameShort] = oe.promotionNameShort;
+      promMap[Promotion.keyName] = oe.promotionName;
       oeMap[OrderElement.keyPromotion] = promMap;
     }
     return oeMap;
