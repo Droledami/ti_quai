@@ -95,21 +95,21 @@ class _OrderDetailedState extends State<OrderDetailed> {
                             }).toList()),
                       ],
                     ),
-                    Column(
-                      children: [
-                        Builder(builder: (context) {
-                          if (hasPromotion) {
-                            return TextDivider(
-                                text: "Promotions", color: customColors.tertiary!);
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        }),
-                        PromotionsSummary(
-                            totalDiscount: widget.order.totalDiscount,
-                            orderElements: widget.order.orderElements),
-                      ],
-                    ),
+                    Builder(builder: (context) {
+                      if (hasPromotion) {
+                        return Column(
+                          children: [
+                            TextDivider(
+                                text: "Promotions", color: customColors.tertiary!),
+                            PromotionsSummary(
+                                totalDiscount: widget.order.totalDiscount,
+                                orderElements: widget.order.orderElements),
+                          ],
+                        );
+                      } else {
+                        return SizedBox.shrink();
+                      }
+                    }),
                     GreatTotal(
                         paymentMethod: widget.order.paymentMethod,
                         totalPrice: widget.order.totalPrice),

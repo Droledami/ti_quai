@@ -10,12 +10,14 @@ import '../models/CustomerOrder.dart';
 import '../models/OrderElement.dart';
 import '../models/Promotion.dart';
 import '../theme.dart';
+import 'FlexIconButton.dart';
 import 'GreatTotal.dart';
 import 'LittleCard.dart';
 import 'OrderHeader.dart';
 import 'OrderLineElement.dart';
 import 'OthersOrderLineElement.dart';
 import 'PromotionLineLong.dart';
+import 'SizedIconButton.dart';
 import 'TextDivider.dart';
 
 class OrderToEditOrAdd extends StatefulWidget {
@@ -35,20 +37,33 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   bool addingOrderElement = false;
   bool addingPromotion = false;
 
+  OrderElement? orderElementInEdition;
+  Promotion? promotionInEdition;
+  String? articleRefOfPromotionInEdition;
+
+  bool isDeletingPromotion = false;
+  bool isDeletingOrderElement = false;
+
   TextEditingController _tableNumberController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _tableNumberController.text = widget.order.tableNumber.toString();
+
     //Blocks anything other than a valid entry
     _tableNumberController.addListener(() {
       String content = _tableNumberController.text;
-      if(RegExp(r"^[1-9][0-9]?$").hasMatch(content)){
+      if (RegExp(r"^[1-9][0-9]?$").hasMatch(content)) {
         widget.order.tableNumber = int.parse(content);
-      }else if(content.length > 1){
-        String previousValue = content.substring(0, content.length-1);
-        _tableNumberController.value = _tableNumberController.value.copyWith(text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length));
-      }else{
+      } else if (content.length > 1) {
+        String previousValue = content.substring(0, content.length - 1);
+        _tableNumberController.value = _tableNumberController.value.copyWith(
+            text: previousValue,
+            selection: TextSelection(
+                baseOffset: previousValue.length,
+                extentOffset: previousValue.length));
+      } else {
         _tableNumberController.text = "";
       }
     });
@@ -95,7 +110,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
             }).toList()),
             Builder(builder: (context) {
               return addingOrderElement
-                  ? AddOrderElementForm(
+                  ? AddOrEditOrderElementForm(
                       onCancel: () {
                         setState(() {
                           addingOrderElement = false;
@@ -203,21 +218,42 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   children: widget.order.orderElements.map((orderElement) {
                     if (orderElement.hasPromotion &&
                         orderElement.promotion != null) {
-                      return PromotionLineLong(
-                          promotion: orderElement.promotion!,
-                          linkedArticle: orderElement.article);
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if(promotionInEdition != null) return;
+                          setState(() {
+                            promotionInEdition = orderElement.promotion;
+                            articleRefOfPromotionInEdition =
+                                orderElement.articleReference;
+                          });
+                        },
+                        child: PromotionLineLong(
+                          onDismissed: (){
+                            orderElement.deletePromotion();
+                          },
+                            promotion: orderElement.promotion!,
+                            linkedArticle: orderElement.article,
+                          key: Key(orderElement.promotion!.name + orderElement.articleReference),
+                        ),
+                      );
                     } else if (orderElement.hasPromotion &&
                         orderElement.promotion == null) {
                       print(
-                          "Error, a promotion has incorrectly set values : hasPromotion is true, yet promotion is null");
+                          "Error, an order element's promotion has incorrectly set values : hasPromotion is true, yet promotion is null");
                       return SizedBox();
                     } else if (!orderElement.hasPromotion &&
                         orderElement.promotion != null) {
                       print(
-                          "Warning, a promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
+                          "Warning, an order element's promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
                       return PromotionLineLong(
+                        onDismissed: (){
+                          orderElement.deletePromotion();
+                        },
                           promotion: orderElement.promotion!,
-                          linkedArticle: orderElement.article);
+                          linkedArticle: orderElement.article,
+                        key: Key(orderElement.promotion!.name + orderElement.articleReference),
+                        );
                     } else {
                       return SizedBox();
                     }
@@ -227,7 +263,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
             ),
             Builder(builder: (context) {
               if (addingPromotion) {
-                return AddPromotionForm(onCancel: () {
+                return AddOrEditPromotionForm(onCancel: () {
                   setState(() {
                     addingPromotion = false;
                   });
@@ -237,12 +273,29 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   setState(() {
                     addingPromotion = false;
                   });
-                  OrderElement? orderElement = widget.order.getOrderElementByRef(articleRef);
+                  OrderElement? orderElement =
+                      widget.order.getOrderElementByRef(articleRef);
                   orderElement?.promotion = promotion;
                   orderElement?.hasPromotion = true;
                 });
+              } else if (promotionInEdition != null) {
+                return AddOrEditPromotionForm(onCancel: () {
+                  setState(() {
+                    promotionInEdition = null;
+                  });
+                }, onConfirmAdd: (promotion, articleRef) {
+                  setState(() {
+                    promotionInEdition = null;
+                  });
+                  OrderElement? orderElement =
+                      widget.order.getOrderElementByRef(articleRef);
+                  orderElement?.promotion = promotion;
+                },
+                  promotionToEdit: promotionInEdition,
+                  articleRefOfPromotionToEdit: articleRefOfPromotionInEdition,
+                );
               } else {
-                return SizedIconButton(
+                return SizedIconButton( //The button is only show if we are not adding or editing anything
                   onTap: () {
                     setState(() {
                       addingPromotion = true;
@@ -255,16 +308,17 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               }
             }),
             GreatTotal(
-              onTap: (){
-                if(!widget.isEditMode) return;
-                setState(() {
-                  if(widget.order.paymentMethod == PaymentMethod.bancontact){
-                    widget.order.paymentMethod = PaymentMethod.cash;
-                  }else{
-                    widget.order.paymentMethod = PaymentMethod.bancontact;
-                  }
-                });
-              },
+                onTap: () {
+                  if (!widget.isEditMode) return;
+                  setState(() {
+                    if (widget.order.paymentMethod ==
+                        PaymentMethod.bancontact) {
+                      widget.order.paymentMethod = PaymentMethod.cash;
+                    } else {
+                      widget.order.paymentMethod = PaymentMethod.bancontact;
+                    }
+                  });
+                },
                 paymentMethod: widget.order.paymentMethod,
                 totalPrice: widget.order.totalPrice),
           ],
@@ -274,21 +328,24 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   }
 }
 
-class AddOrderElementForm extends StatefulWidget {
-  const AddOrderElementForm({
+class AddOrEditOrderElementForm extends StatefulWidget {
+  const AddOrEditOrderElementForm({
     super.key,
     required this.onCancel,
     required this.onConfirmAdd,
+    this.orderElementToEdit
   });
 
   final Function onCancel;
   final Function(OrderElement) onConfirmAdd;
 
+  final OrderElement? orderElementToEdit;
+
   @override
-  State<AddOrderElementForm> createState() => _AddOrderElementFormState();
+  State<AddOrEditOrderElementForm> createState() => _AddOrEditOrderElementFormState();
 }
 
-class _AddOrderElementFormState extends State<AddOrderElementForm> {
+class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
   OrderElement orderElement =
       OrderElement(article: Article.empty(type: ArticleType.menu), quantity: 1);
 
@@ -353,6 +410,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
 
   @override
   Widget build(BuildContext context) {
+    final bool editingOrder = widget.orderElementToEdit != null;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Form(
@@ -387,7 +445,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                               RegExp(r"^[1-9][0-9]*$").hasMatch(value)) {
                             return null;
                           } else {
-                            return "Erreur Qté"; //TODO: les validations de tous les champppps
+                            return "Erreur Qté";
                           }
                         },
                         textEditingController: _quantityController,
@@ -398,10 +456,11 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
-                        validator: (value){
-                          if(value != null && RegExp(r"[A-Za-z]").hasMatch(value)){
+                        validator: (value) {
+                          if (value != null &&
+                              RegExp(r"[A-Za-z]").hasMatch(value)) {
                             return null;
-                          }else{
+                          } else {
                             return "Erreur alpha";
                           }
                         },
@@ -413,10 +472,11 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
-                        validator: (value){
-                          if(value != null && RegExp(r"^[0-9]{1,3}$").hasMatch(value)){
+                        validator: (value) {
+                          if (value != null &&
+                              RegExp(r"^[0-9]{1,3}$").hasMatch(value)) {
                             return null;
-                          }else{
+                          } else {
                             return "Erreur numéro";
                           }
                         },
@@ -428,10 +488,11 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
-                        validator: (value){
-                          if(value!=null && RegExp(r"^[a-zA-Z]$").hasMatch(value)){
+                        validator: (value) {
+                          if (value != null &&
+                              RegExp(r"^[a-zA-Z]$").hasMatch(value)) {
                             return null;
-                          }else{
+                          } else {
                             return "Erreur s-alpha";
                           }
                         },
@@ -501,11 +562,11 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                       Row(
                         children: [
                           EntryBox(
-                            validator: (value){
-                              if(value!= null && value.isNotEmpty){
+                            validator: (value) {
+                              if (value != null && value.isNotEmpty) {
                                 return null;
-                              }else{
-                                return "Veuillez donner la description du ${addingExtra? "Supplément" :  "Commentaire"}";
+                              } else {
+                                return "Veuillez donner la description du ${addingExtra ? "Supplément" : "Commentaire"}";
                               }
                             },
                             orderEntryType: OrderEntry.text,
@@ -521,10 +582,12 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                           Builder(builder: (context) {
                             if (addingExtra) {
                               return EntryBox(
-                                validator: (value){
-                                  if(value != null && RegExp(r"^[1-9][0-9]?€$").hasMatch(value)){
+                                validator: (value) {
+                                  if (value != null &&
+                                      RegExp(r"^[1-9][0-9]?€$")
+                                          .hasMatch(value)) {
                                     return null;
-                                  }else{
+                                  } else {
                                     return "Erreur sup.";
                                   }
                                 },
@@ -558,18 +621,20 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                           Expanded(flex: 2, child: SizedBox.shrink()),
                           FlexIconButton(
                             onTap: () {
-                              if(_addCommentOrExtraFormKey.currentState!.validate()){
-                              orderElement.comment = _commentController.text;
-                              if (addingExtra) {
-                                String extraPriceStr = _extraPriceController.text
-                                    .replaceFirst("€", "", 1);
-                                orderElement.extraPrice =
-                                    double.parse(extraPriceStr);
-                              }
-                              setState(() {
-                                addingComment = false;
-                                addingExtra = false;
-                              });
+                              if (_addCommentOrExtraFormKey.currentState!
+                                  .validate()) {
+                                orderElement.comment = _commentController.text;
+                                if (addingExtra) {
+                                  String extraPriceStr = _extraPriceController
+                                      .text
+                                      .replaceFirst("€", "", 1);
+                                  orderElement.extraPrice =
+                                      double.parse(extraPriceStr);
+                                }
+                                setState(() {
+                                  addingComment = false;
+                                  addingExtra = false;
+                                });
                               }
                             },
                             color: customColors.primary!,
@@ -595,30 +660,52 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
   }
 }
 
-class AddPromotionForm extends StatefulWidget {
-  const AddPromotionForm(
-      {super.key, required this.onCancel, required this.onConfirmAdd});
+class AddOrEditPromotionForm extends StatefulWidget {
+  const AddOrEditPromotionForm(
+      {super.key,
+      required this.onCancel,
+      required this.onConfirmAdd,
+      this.promotionToEdit,
+      this.articleRefOfPromotionToEdit})
+      : assert(
+            (promotionToEdit != null && articleRefOfPromotionToEdit != null) ||
+                (promotionToEdit == null &&
+                    articleRefOfPromotionToEdit == null),
+            "When editing, both the promotion and the articleReference must be not null");
 
   final Function onCancel;
   final Function(Promotion, String) onConfirmAdd;
 
+  final Promotion? promotionToEdit;
+  final String? articleRefOfPromotionToEdit;
+
   @override
-  State<AddPromotionForm> createState() => _AddPromotionFormState();
+  State<AddOrEditPromotionForm> createState() => _AddOrEditPromotionFormState();
 }
 
-class _AddPromotionFormState extends State<AddPromotionForm> {
+class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
   final _discountValueController = TextEditingController();
   final _promotionNameController = TextEditingController();
   final _linkedArticleController = TextEditingController();
 
   final _addPromotionFormKey = GlobalKey<FormState>();
 
-  Promotion promotion =
-      Promotion(discountValue: 0, name: "");
+  Promotion promotion = Promotion(discountValue: 0, name: "");
 
   @override
   void initState() {
     super.initState();
+
+    if (widget.promotionToEdit != null) {
+      promotion.name = widget.promotionToEdit!.name;
+      promotion.discountValue = widget.promotionToEdit!.discountValue;
+
+      _promotionNameController.text = widget.promotionToEdit!.name;
+      _discountValueController.text =
+          "-${widget.promotionToEdit!.discountValue}€";
+      _linkedArticleController.text = widget.articleRefOfPromotionToEdit!;
+    }
+
     _promotionNameController.addListener(() {
       promotion.name = _promotionNameController.text;
     });
@@ -650,12 +737,12 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
     //Forces case specific format like A followed by any number with the optionnal subalpha (ex: A326b or Z78)
     _linkedArticleController.addListener(() {
       if (RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
-          .hasMatch(_linkedArticleController.text) &&
+              .hasMatch(_linkedArticleController.text) &&
           _linkedArticleController.text.length > 1) {
         String content = _linkedArticleController.text;
         if (content.length > 2) {
           String contentUpper =
-          content.substring(0, content.length - 1).toUpperCase();
+              content.substring(0, content.length - 1).toUpperCase();
           String contentLower = content
               .substring(content.length - 1, content.length)
               .toLowerCase();
@@ -663,10 +750,9 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
         }
         _linkedArticleController.value = _linkedArticleController.value
             .copyWith(
-            text: content,
-            selection: TextSelection(
-                baseOffset: content.length,
-                extentOffset: content.length));
+                text: content,
+                selection: TextSelection(
+                    baseOffset: content.length, extentOffset: content.length));
       }
     });
   }
@@ -681,6 +767,7 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
 
   @override
   Widget build(BuildContext context) {
+    final bool editingPromotion = widget.promotionToEdit != null;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Form(
@@ -699,13 +786,13 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Ajout d'une promotion",
+                  "${editingPromotion ? "Modification" : "Ajout"} d'une promotion",
                 ),
                 EntryBox(
-                  validator: (value){
-                    if(value != null && value.isNotEmpty){
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
                       return null;
-                    }else{
+                    } else {
                       return "Veuillez entrer le nom de la promotion";
                     }
                   },
@@ -719,9 +806,11 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                   children: [
                     EntryBox(
                       validator: (value) {
-                        if(value != null && RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$").hasMatch(value)){
+                        if (value != null &&
+                            RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
+                                .hasMatch(value)) {
                           return null;
-                        }else{
+                        } else {
                           return "Erreur référence";
                         }
                       },
@@ -733,10 +822,11 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                       marginLeft: 10,
                     ),
                     EntryBox(
-                      validator: (value){
-                        if(value!= null && RegExp(r"^-[1-9][0-9]?€$").hasMatch(value)){
+                      validator: (value) {
+                        if (value != null &&
+                            RegExp(r"^-[1-9][0-9]?€$").hasMatch(value)) {
                           return null;
-                        }else{
+                        } else {
                           return "Erreur réduction";
                         }
                       },
@@ -761,14 +851,14 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                     Expanded(flex: 2, child: SizedBox.shrink()),
                     FlexIconButton(
                       onTap: () {
-                        if(_addPromotionFormKey.currentState!.validate()){
-                        widget.onConfirmAdd(
-                            promotion, _linkedArticleController.text);
+                        if (_addPromotionFormKey.currentState!.validate()) {
+                          widget.onConfirmAdd(
+                              promotion, _linkedArticleController.text);
                         }
                       },
                       color: customColors.secondary!,
                       spreadColor: customColors.secondaryLight!,
-                      iconData: Icons.add,
+                      iconData: editingPromotion? Icons.check_outlined : Icons.add,
                     ),
                   ],
                 )
@@ -781,114 +871,3 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
   }
 }
 
-class SizedIconButton extends StatelessWidget {
-  const SizedIconButton(
-      {super.key,
-      required this.color,
-      required this.spreadColor,
-      required this.iconData,
-      required this.onTap,
-      this.iconSize = 40});
-
-  final Color color;
-  final Color spreadColor;
-  final IconData iconData;
-  final Function onTap;
-  final double iconSize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 10, top: 5),
-      child: Container(
-        width: 90,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(7),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black45,
-                offset: Offset.fromDirection(1, 4),
-                blurStyle: BlurStyle.normal,
-                blurRadius: 4)
-          ],
-        ),
-        child: Material(
-          color: color,
-          borderRadius: BorderRadius.circular(7),
-          child: InkWell(
-              borderRadius: BorderRadius.circular(7),
-              splashColor: spreadColor,
-              onTap: () => onTap(),
-              child: Icon(
-                iconData,
-                size: iconSize,
-              )),
-        ),
-      ),
-    );
-  }
-}
-
-class FlexIconButton extends StatelessWidget {
-  const FlexIconButton(
-      {super.key,
-      required this.onTap,
-      required this.color,
-      required this.spreadColor,
-      required this.iconData,
-      this.flex = 1,
-      this.marginLeft = 3,
-      this.marginRight = 3,
-      this.marginTop = 3,
-      this.marginBottom = 6});
-
-  final Function onTap;
-  final Color color;
-  final Color spreadColor;
-  final IconData iconData;
-  final int flex;
-  final double marginLeft;
-  final double marginRight;
-  final double marginTop;
-  final double marginBottom;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: EdgeInsets.only(
-            left: marginLeft,
-            right: marginRight,
-            top: marginTop,
-            bottom: marginBottom),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(7),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black45,
-                  offset: Offset.fromDirection(1, 4),
-                  blurStyle: BlurStyle.normal,
-                  blurRadius: 4)
-            ],
-          ),
-          child: Material(
-            color: color,
-            borderRadius: BorderRadius.circular(7),
-            child: InkWell(
-                borderRadius: BorderRadius.circular(7),
-                splashColor: spreadColor,
-                onTap: () => onTap(),
-                child: Icon(
-                  iconData,
-                  size: 40,
-                )),
-          ),
-        ),
-      ),
-    );
-  }
-}

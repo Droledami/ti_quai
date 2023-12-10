@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
 
+import '../main.dart';
 import 'OrderElement.dart';
 
 class CustomerOrder {
@@ -20,7 +21,7 @@ class CustomerOrder {
       required this.paymentMethod});
 
   CustomerOrder.createNew()
-      : id = "toBeDefined",
+      : id = EditOrAddScreenArguments.keyDefinedLater,
         tableNumber = -1,
         date = DateTime.now(),
         orderElements = List<OrderElement>.empty(growable: true),

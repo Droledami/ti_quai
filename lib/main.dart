@@ -17,7 +17,7 @@ import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/TitleHeader.dart';
-import 'custom_widgets/OrderToEdit.dart';
+import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -241,12 +241,15 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            print(
-                "${order.tableNumber} ${order.date} ${order.orderElements[0].articleReference} ${order.orderElements[0].promotion?.name}");
-            if(args.isEditMode){
+            if(order.tableNumber <=0){
+              SnackBar errorNbTable = SnackBar(content: Text("Erreur! numéro de table incorrect"));
+              ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
+              return;
+            }
+            if(args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater){
               _orderBloc.add(UpdateOrder(order));
             }else{
-            _orderBloc.add(AddOrder(order));
+              _orderBloc.add(AddOrder(order));
             }
             Navigator.pop(context);
           },
@@ -287,6 +290,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
           } else if (state is OrderOperationSuccess) {
             return Container();
           } else if (state is OrderError) {
+            print(state.errorMessage);
             return Container();
           } else {
             return Container();

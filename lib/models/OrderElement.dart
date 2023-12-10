@@ -51,6 +51,10 @@ class OrderElement {
   bool hasPromotion;
   Promotion? promotion;
 
+  String get fullDescription{
+    return "$quantity $articleReference $comment";
+  }
+
   double get price {
     return article.price * quantity + extraPrice;
   }
@@ -95,5 +99,10 @@ class OrderElement {
       return promotion!.discountValue;
     }
     return null;
+  }
+
+  void deletePromotion(){
+    promotion = null;
+    hasPromotion = false;
   }
 }
