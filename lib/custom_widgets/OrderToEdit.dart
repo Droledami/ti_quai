@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
 import 'package:ti_quai/enums/EntryType.dart';
+import 'package:ti_quai/enums/PaymentMethod.dart';
 import 'package:ti_quai/models/Article.dart';
 
 import '../enums/ArticleType.dart';
@@ -39,13 +40,16 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   @override
   void initState() {
     super.initState();
+    //Blocks anything other than a valid entry
     _tableNumberController.addListener(() {
       String content = _tableNumberController.text;
       if(RegExp(r"^[1-9][0-9]?$").hasMatch(content)){
         widget.order.tableNumber = int.parse(content);
-      }else{
+      }else if(content.length > 1){
         String previousValue = content.substring(0, content.length-1);
         _tableNumberController.value = _tableNumberController.value.copyWith(text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length));
+      }else{
+        _tableNumberController.text = "";
       }
     });
   }
@@ -102,7 +106,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                           addingOrderElement = false;
                           print(
                               "${orderElement.quantity} ${orderElement.articleAlpha} ${orderElement.articleNumber}, ${orderElement.articleSubAlpha}");
-                          //TODO: déduire le prix via une db
+                          //TODO: déduire le prix via une db ou un fichier
                           widget.order.orderElements.add(orderElement);
                         });
                       },
@@ -233,7 +237,9 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   setState(() {
                     addingPromotion = false;
                   });
-                  //TODO: Ajouter la promotion dans l'orderElement désigné par l'article associé
+                  OrderElement? orderElement = widget.order.getOrderElementByRef(articleRef);
+                  orderElement?.promotion = promotion;
+                  orderElement?.hasPromotion = true;
                 });
               } else {
                 return SizedIconButton(
@@ -249,6 +255,16 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               }
             }),
             GreatTotal(
+              onTap: (){
+                if(!widget.isEditMode) return;
+                setState(() {
+                  if(widget.order.paymentMethod == PaymentMethod.bancontact){
+                    widget.order.paymentMethod = PaymentMethod.cash;
+                  }else{
+                    widget.order.paymentMethod = PaymentMethod.bancontact;
+                  }
+                });
+              },
                 paymentMethod: widget.order.paymentMethod,
                 totalPrice: widget.order.totalPrice),
           ],
@@ -653,6 +669,14 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                 extentOffset: content.length));
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _discountValueController.dispose();
+    _promotionNameController.dispose();
+    _linkedArticleController.dispose();
+    super.dispose();
   }
 
   @override

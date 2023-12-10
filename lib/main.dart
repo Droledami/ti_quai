@@ -150,7 +150,8 @@ class _HomescreenState extends State<Homescreen> {
           onPressed: () {
             Navigator.pushNamed(context, "/order",
                 arguments: EditOrAddScreenArguments(
-                    orderId: EditOrAddScreenArguments.keyDefinedLater, isEditMode: true));
+                    orderId: EditOrAddScreenArguments.keyDefinedLater,
+                    isEditMode: true));
           },
           backgroundColor: customColors.secondary!,
           child: const Icon(
@@ -178,9 +179,10 @@ class _HomescreenState extends State<Homescreen> {
               ],
             );
           } else if (state is OrderOperationSuccess) {
+            _orderBloc.add(LoadOrder());
             return Container();
           } else if (state is OrderError) {
-            return Container();
+            return Text(state.errorMessage);
           } else {
             return Container();
           }
@@ -238,7 +240,16 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
           backgroundColor: Colors.white.withOpacity(0.0),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {  },
+          onPressed: () {
+            print(
+                "${order.tableNumber} ${order.date} ${order.orderElements[0].articleReference} ${order.orderElements[0].promotion?.name}");
+            if(args.isEditMode){
+              _orderBloc.add(UpdateOrder(order));
+            }else{
+            _orderBloc.add(AddOrder(order));
+            }
+            Navigator.pop(context);
+          },
           backgroundColor: customColors.secondary!,
           child: const Icon(
             Icons.check_outlined,
@@ -251,7 +262,8 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               child: CircularProgressIndicator(),
             );
           } else if (state is OrderLoaded) {
-            if (args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+            if (args.isEditMode &&
+                args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
               order = state.getOrder(args.orderId);
             } else {
               order = CustomerOrder.createNew();
