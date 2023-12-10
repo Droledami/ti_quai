@@ -62,6 +62,13 @@ class OrderHeader extends StatelessWidget {
                     Builder(builder: (context) {
                       if (isEditMode) {
                         return EntryBox(
+                          validator: (value){
+                            if(value != null && RegExp(r"^[1-9][0-9]?$").hasMatch(value)){
+                              return null;
+                            }else{
+                              return "N° table incorrect";
+                            }
+                          },
                           textEditingController: textEditingController!,
                           orderEntryType: OrderEntry.tableNumber,
                           maxLength: 2,

@@ -1,6 +1,3 @@
-import 'dart:js_util';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
@@ -38,6 +35,26 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   bool addingPromotion = false;
 
   TextEditingController _tableNumberController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tableNumberController.addListener(() {
+      String content = _tableNumberController.text;
+      if(RegExp(r"^[1-9][0-9]?$").hasMatch(content)){
+        widget.order.tableNumber = int.parse(content);
+      }else{
+        String previousValue = content.substring(0, content.length-1);
+        _tableNumberController.value = _tableNumberController.value.copyWith(text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tableNumberController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +284,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
   final TextEditingController _extraPriceController = TextEditingController();
 
   final _addOrderElementFormKey = GlobalKey<FormState>();
+  final _addCommentOrExtraFormKey = GlobalKey<FormState>();
 
   bool addingComment = false;
   bool addingExtra = false;
@@ -304,6 +322,17 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
         _extraPriceController.text = "$content€";
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _alphaController.dispose();
+    _numberController.dispose();
+    _subAlphaController.dispose();
+    _commentController.dispose();
+    _extraPriceController.dispose();
+    super.dispose();
   }
 
   @override
@@ -357,7 +386,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                           if(value != null && RegExp(r"[A-Za-z]").hasMatch(value)){
                             return null;
                           }else{
-                            return "Erreur Alpha";
+                            return "Erreur alpha";
                           }
                         },
                         textEditingController: _alphaController,
@@ -368,6 +397,13 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
+                        validator: (value){
+                          if(value != null && RegExp(r"^[0-9]{1,3}$").hasMatch(value)){
+                            return null;
+                          }else{
+                            return "Erreur numéro";
+                          }
+                        },
                         textEditingController: _numberController,
                         orderEntryType: OrderEntry.number,
                         maxLength: 3,
@@ -376,6 +412,13 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
+                        validator: (value){
+                          if(value!=null && RegExp(r"^[a-zA-Z]$").hasMatch(value)){
+                            return null;
+                          }else{
+                            return "Erreur s-alpha";
+                          }
+                        },
                         textEditingController: _subAlphaController,
                         orderEntryType: OrderEntry.subAlpha,
                         maxLength: 1,
@@ -432,76 +475,95 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                   ],
                 );
               } else if (addingComment || addingExtra) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        "${addingExtra ? "Supplément" : "Commentaire"} pour l'élément: ${orderElement.articleReference}"),
-                    Row(
-                      children: [
-                        EntryBox(
-                          orderEntryType: OrderEntry.text,
-                          flex: 4,
-                          maxLength: 150,
-                          lines: addingExtra ? 1 : 2,
-                          textAlign: TextAlign.left,
-                          placeholder:
-                              "${addingExtra ? "Supplément" : "Commentaire"}...",
-                          textEditingController: _commentController,
-                          marginLeft: 10,
-                        ),
-                        Builder(builder: (context) {
-                          if (addingExtra) {
-                            return EntryBox(
-                              orderEntryType: OrderEntry.price,
-                              flex: 1,
-                              maxLength: 2,
-                              placeholder: "Prix",
-                              textEditingController: _extraPriceController,
-                              marginLeft: 6,
-                            );
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        })
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        FlexIconButton(
-                          onTap: () {
-                            setState(() {
-                              addingComment = false;
-                              addingExtra = false;
-                            });
-                          },
-                          color: customColors.primary!,
-                          spreadColor: customColors.primaryDark!,
-                          iconData: Icons.backspace,
-                          marginLeft: 10,
-                        ),
-                        Expanded(flex: 2, child: SizedBox.shrink()),
-                        FlexIconButton(
-                          onTap: () {
-                            orderElement.comment = _commentController.text;
+                return Form(
+                  key: _addCommentOrExtraFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                          "${addingExtra ? "Supplément" : "Commentaire"} pour l'élément: ${orderElement.articleReference}"),
+                      Row(
+                        children: [
+                          EntryBox(
+                            validator: (value){
+                              if(value!= null && value.isNotEmpty){
+                                return null;
+                              }else{
+                                return "Veuillez donner la description du ${addingExtra? "Supplément" :  "Commentaire"}";
+                              }
+                            },
+                            orderEntryType: OrderEntry.text,
+                            flex: 4,
+                            maxLength: 150,
+                            lines: addingExtra ? 1 : 2,
+                            textAlign: TextAlign.left,
+                            placeholder:
+                                "${addingExtra ? "Supplément" : "Commentaire"}...",
+                            textEditingController: _commentController,
+                            marginLeft: 10,
+                          ),
+                          Builder(builder: (context) {
                             if (addingExtra) {
-                              String extraPriceStr = _extraPriceController.text
-                                  .replaceFirst("€", "", 1);
-                              orderElement.extraPrice =
-                                  double.parse(extraPriceStr);
+                              return EntryBox(
+                                validator: (value){
+                                  if(value != null && RegExp(r"^[1-9][0-9]?€$").hasMatch(value)){
+                                    return null;
+                                  }else{
+                                    return "Erreur sup.";
+                                  }
+                                },
+                                orderEntryType: OrderEntry.price,
+                                flex: 1,
+                                maxLength: 2,
+                                placeholder: "Prix",
+                                textEditingController: _extraPriceController,
+                                marginLeft: 6,
+                              );
+                            } else {
+                              return SizedBox.shrink();
                             }
-                            setState(() {
-                              addingComment = false;
-                              addingExtra = false;
-                            });
-                          },
-                          color: customColors.primary!,
-                          spreadColor: customColors.primaryDark!,
-                          iconData: Icons.add,
-                        ),
-                      ],
-                    )
-                  ],
+                          })
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          FlexIconButton(
+                            onTap: () {
+                              setState(() {
+                                addingComment = false;
+                                addingExtra = false;
+                              });
+                            },
+                            color: customColors.primary!,
+                            spreadColor: customColors.primaryDark!,
+                            iconData: Icons.backspace,
+                            marginLeft: 10,
+                          ),
+                          Expanded(flex: 2, child: SizedBox.shrink()),
+                          FlexIconButton(
+                            onTap: () {
+                              if(_addCommentOrExtraFormKey.currentState!.validate()){
+                              orderElement.comment = _commentController.text;
+                              if (addingExtra) {
+                                String extraPriceStr = _extraPriceController.text
+                                    .replaceFirst("€", "", 1);
+                                orderElement.extraPrice =
+                                    double.parse(extraPriceStr);
+                              }
+                              setState(() {
+                                addingComment = false;
+                                addingExtra = false;
+                              });
+                              }
+                            },
+                            color: customColors.primary!,
+                            spreadColor: customColors.primaryDark!,
+                            iconData: Icons.add,
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 );
               } else if (addingExtra && addingComment) {
                 throw Exception(
@@ -620,7 +682,7 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                     if(value != null && value.isNotEmpty){
                       return null;
                     }else{
-                      return "Veuillez entrer le nom de la promotiion";
+                      return "Veuillez entrer le nom de la promotion";
                     }
                   },
                   orderEntryType: OrderEntry.text,
