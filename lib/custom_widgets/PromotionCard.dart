@@ -16,13 +16,12 @@ class PromotionCard extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(left: 10, right: 0, top: 3, bottom: 2),
       child: Container(
-        width: 120,
         padding: EdgeInsets.only(right: 3),
         decoration: BoxDecoration(
           color: customColors.secondary,
           borderRadius: BorderRadius.circular(7),
         ),
-        child: Row(
+        child: Wrap(
           children: [
             Container(
               padding: EdgeInsets.only(left: 3, right: 3),

@@ -204,33 +204,33 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                 ),
               ],
             ),
-            Builder(
-              builder: (context) {
-                if(addingPromotion){
-                return AddPromotionForm(
-                    onCancel: () { setState(() {
-                      addingPromotion = false;
-                    });}, onConfirmAdd: (promotion, articleRef) {
-                      print('${promotion.nameLong} ${promotion.discountValue} articleRef: $articleRef');
-                      setState(() {
-                        addingPromotion = false;
-                      });
-                      //TODO: Ajouter la promotion dans l'orderElement désigné par l'article associé
-                       });
-                }else{
-                  return SizedIconButton(
-                    onTap: () {
-                      setState(() {
-                        addingPromotion = true;
-                      });
-                    },
-                    color: customColors.secondary!,
-                    spreadColor: customColors.secondaryLight!,
-                    iconData: Icons.add,
-                  );
-                }
+            Builder(builder: (context) {
+              if (addingPromotion) {
+                return AddPromotionForm(onCancel: () {
+                  setState(() {
+                    addingPromotion = false;
+                  });
+                }, onConfirmAdd: (promotion, articleRef) {
+                  print(
+                      '${promotion.nameLong} ${promotion.discountValue} articleRef: $articleRef');
+                  setState(() {
+                    addingPromotion = false;
+                  });
+                  //TODO: Ajouter la promotion dans l'orderElement désigné par l'article associé
+                });
+              } else {
+                return SizedIconButton(
+                  onTap: () {
+                    setState(() {
+                      addingPromotion = true;
+                    });
+                  },
+                  color: customColors.secondary!,
+                  spreadColor: customColors.secondaryLight!,
+                  iconData: Icons.add,
+                );
               }
-            ),
+            }),
             GreatTotal(
                 paymentMethod: widget.order.paymentMethod,
                 totalPrice: widget.order.totalPrice),
@@ -266,6 +266,8 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _extraPriceController = TextEditingController();
 
+  final _addOrderElementFormKey = GlobalKey<FormState>();
+
   bool addingComment = false;
   bool addingExtra = false;
 
@@ -279,15 +281,19 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
       }
     });
     _alphaController.addListener(() {
-      orderElement.article.alpha = _alphaController.text;
+      String content = _alphaController.text.toUpperCase();
+      orderElement.article.alpha = content;
+      _alphaController.value = _alphaController.value.copyWith(text: content);
     });
     _numberController.addListener(() {
       if (int.tryParse(_numberController.text) != null) {
         orderElement.article.number = int.parse(_numberController.text);
+      } else {
+        orderElement.article.number = -1;
       }
     });
     _subAlphaController.addListener(() {
-      orderElement.article.subAlpha = _subAlphaController.text;
+      orderElement.article.subAlpha = _subAlphaController.text.toLowerCase();
     });
     _extraPriceController.addListener(() {
       if (!RegExp(r"^[0-9]+€?").hasMatch(_extraPriceController.text)) {
@@ -305,6 +311,7 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Form(
+      key: _addOrderElementFormKey,
       child: Flexible(
         fit: FlexFit.loose,
         child: Padding(
@@ -330,6 +337,14 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                     ),
                     Row(children: [
                       EntryBox(
+                        validator: (value) {
+                          if (value != null &&
+                              RegExp(r"^[1-9][0-9]*$").hasMatch(value)) {
+                            return null;
+                          } else {
+                            return "Erreur Qté"; //TODO: les validations de tous les champppps
+                          }
+                        },
                         textEditingController: _quantityController,
                         orderEntryType: OrderEntry.quantity,
                         maxLength: 2,
@@ -338,6 +353,13 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                         marginRight: 3,
                       ),
                       EntryBox(
+                        validator: (value){
+                          if(value != null && RegExp(r"[A-Za-z]").hasMatch(value)){
+                            return null;
+                          }else{
+                            return "Erreur Alpha";
+                          }
+                        },
                         textEditingController: _alphaController,
                         orderEntryType: OrderEntry.alpha,
                         maxLength: 1,
@@ -364,12 +386,11 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                     Row(
                       children: [
                         FlexIconButton(
-                          color: customColors.primary!,
-                          spreadColor: customColors.primaryDark!,
-                          iconData: Icons.backspace,
-                          marginLeft: 10,
-                          onTap: () => widget.onCancel(),
-                        ),
+                            color: customColors.primary!,
+                            spreadColor: customColors.primaryDark!,
+                            iconData: Icons.backspace,
+                            marginLeft: 10,
+                            onTap: () => {widget.onCancel()}),
                         FlexIconButton(
                           color: customColors.primary!,
                           spreadColor: customColors.primaryDark!,
@@ -399,7 +420,12 @@ class _AddOrderElementFormState extends State<AddOrderElementForm> {
                           spreadColor: customColors.primaryDark!,
                           iconData: Icons.add,
                           marginRight: 0,
-                          onTap: () => widget.onConfirmAdd(orderElement),
+                          onTap: () {
+                            if (_addOrderElementFormKey.currentState!
+                                .validate()) {
+                              widget.onConfirmAdd(orderElement);
+                            }
+                          },
                         ),
                       ],
                     )
@@ -507,7 +533,10 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
   final _promotionNameController = TextEditingController();
   final _linkedArticleController = TextEditingController();
 
-  Promotion promotion = Promotion(discountValue: 0, nameLong: "", nameShort: "");
+  final _addPromotionFormKey = GlobalKey<FormState>();
+
+  Promotion promotion =
+      Promotion(discountValue: 0, nameLong: "", nameShort: "");
 
   @override
   void initState() {
@@ -517,7 +546,8 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
     });
     //forces -XX€ format and always sets cursor position at before last
     _discountValueController.addListener(() {
-      if (RegExp(r"^-?[1-9][0-9]*€?$").hasMatch(_discountValueController.text) &&
+      if (RegExp(r"^-?[1-9][0-9]*€?$")
+              .hasMatch(_discountValueController.text) &&
           _discountValueController.text.isNotEmpty) {
         String content = _discountValueController.text;
         if (!content.contains("-")) {
@@ -532,7 +562,8 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                 selection: TextSelection(
                     baseOffset: content.length - 1,
                     extentOffset: content.length - 1));
-        double discountValue = double.parse(content.substring(1,content.length - 1));
+        double discountValue =
+            double.parse(content.substring(1, content.length - 1));
         promotion.discountValue = discountValue;
       } else {
         _discountValueController.text = "";
@@ -540,22 +571,24 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
     });
     //Forces case specific format like A followed by any number with the optionnal subalpha (ex: A326b or Z78)
     _linkedArticleController.addListener(() {
-      if (RegExp(r"^[a-zA-Z][0-9]*[a-zA-Z]?$")
-          .hasMatch(_linkedArticleController.text)&& _linkedArticleController.text.isNotEmpty) {
-        if (RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
-            .hasMatch(_linkedArticleController.text)&& _linkedArticleController.text.length > 1) {
-          String content = _linkedArticleController.text;
-          if(content.length > 2){
-            String contentUpper = content.substring(0, content.length - 1).toUpperCase();
-            String contentLower = content.substring(content.length - 1, content.length).toLowerCase();
-            content = contentUpper + contentLower;
-          }
-          _linkedArticleController.value = _linkedArticleController.value.copyWith(text: content, selection: TextSelection(baseOffset: content.length, extentOffset: content.length));
-        }else if(RegExp(r"^.[a-zA-Z]$").hasMatch(_linkedArticleController.text)){
-          _linkedArticleController.text = "";
+      if (RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
+          .hasMatch(_linkedArticleController.text) &&
+          _linkedArticleController.text.length > 1) {
+        String content = _linkedArticleController.text;
+        if (content.length > 2) {
+          String contentUpper =
+          content.substring(0, content.length - 1).toUpperCase();
+          String contentLower = content
+              .substring(content.length - 1, content.length)
+              .toLowerCase();
+          content = contentUpper + contentLower;
         }
-      }else{
-        _linkedArticleController.text = "";
+        _linkedArticleController.value = _linkedArticleController.value
+            .copyWith(
+            text: content,
+            selection: TextSelection(
+                baseOffset: content.length,
+                extentOffset: content.length));
       }
     });
   }
@@ -565,10 +598,11 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Form(
+      key: _addPromotionFormKey,
       child: Flexible(
         fit: FlexFit.loose,
         child: Padding(
-          padding: const EdgeInsets.only(left: 10, right: 10),
+          padding: const EdgeInsets.only(left: 10, right: 10, top: 5),
           child: Container(
             padding: EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
@@ -582,6 +616,13 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                   "Ajout d'une promotion",
                 ),
                 EntryBox(
+                  validator: (value){
+                    if(value != null && value.isNotEmpty){
+                      return null;
+                    }else{
+                      return "Veuillez entrer le nom de la promotiion";
+                    }
+                  },
                   orderEntryType: OrderEntry.text,
                   maxLength: 80,
                   placeholder: "Nom de la promotion...",
@@ -591,14 +632,28 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                 Row(
                   children: [
                     EntryBox(
+                      validator: (value) {
+                        if(value != null && RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$").hasMatch(value)){
+                          return null;
+                        }else{
+                          return "Erreur référence";
+                        }
+                      },
                       flex: 4,
                       orderEntryType: OrderEntry.text,
-                      maxLength: 10,
+                      maxLength: 5,
                       placeholder: "Article associé (ex:A2b)",
                       textEditingController: _linkedArticleController,
                       marginLeft: 10,
                     ),
                     EntryBox(
+                      validator: (value){
+                        if(value!= null && RegExp(r"^-[1-9][0-9]?€$").hasMatch(value)){
+                          return null;
+                        }else{
+                          return "Erreur réduction";
+                        }
+                      },
                       flex: 1,
                       orderEntryType: OrderEntry.price,
                       maxLength: 4,
@@ -619,7 +674,12 @@ class _AddPromotionFormState extends State<AddPromotionForm> {
                     ),
                     Expanded(flex: 2, child: SizedBox.shrink()),
                     FlexIconButton(
-                      onTap: () => widget.onConfirmAdd(promotion, _linkedArticleController.text),
+                      onTap: () {
+                        if(_addPromotionFormKey.currentState!.validate()){
+                        widget.onConfirmAdd(
+                            promotion, _linkedArticleController.text);
+                        }
+                      },
                       color: customColors.secondary!,
                       spreadColor: customColors.secondaryLight!,
                       iconData: Icons.add,

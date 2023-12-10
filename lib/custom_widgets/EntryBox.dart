@@ -11,6 +11,7 @@ class EntryBox extends StatelessWidget {
       required this.maxLength,
       required this.placeholder,
         required this.textEditingController,
+        this.validator,
         this.textAlign = TextAlign.center,
         this.flex = 1,
         this.lines = 1,
@@ -33,6 +34,7 @@ class EntryBox extends StatelessWidget {
   final double marginBottom;
 
   final TextEditingController textEditingController;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +53,7 @@ class EntryBox extends StatelessWidget {
               color: customColors.cardQuarterTransparency,
               borderRadius: BorderRadius.circular(7)),
           child: TextFormField(
+            validator: validator,
             maxLines: lines,
             controller: textEditingController,
             textAlign: textAlign,
