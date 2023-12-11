@@ -1,6 +1,7 @@
 //The full order containing every order Element and holding the final price accounting all quantities and promotions
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
 
 import '../enums/ArticleType.dart';
@@ -8,6 +9,7 @@ import '../main.dart';
 import 'OrderElement.dart';
 
 class CustomerOrder {
+  //Static keys for firebase
   static const String keyId = "id";
   static const String keyTableNumber = "tableNumber";
   static const String keyDate = "date";
@@ -83,7 +85,6 @@ class CustomerOrder {
         nb++;
       }
     }
-    print(nb);
     return nb;
   }
 
@@ -100,6 +101,14 @@ class CustomerOrder {
   OrderElement? getOrderElementByRef(String ref){
     for(OrderElement orderElement in orderElements){
       if(orderElement.articleReference == ref){
+        return orderElement;
+      }
+    }
+  }
+
+  OrderElement? getOrderElementByUuid(UniqueKey uuid){
+    for(OrderElement orderElement in orderElements){
+      if(orderElement.uuid == uuid){
         return orderElement;
       }
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:ti_quai/models/Article.dart';
 
 import 'package:ti_quai/models/Promotion.dart';
@@ -5,6 +6,7 @@ import 'package:ti_quai/models/Promotion.dart';
 import '../enums/ArticleType.dart';
 
 class OrderElement {
+  //Static keys for firebase
   static const String keyArticle = "article";
   static const String keyQuantity = "quantity";
   static const String keyComment = "comment";
@@ -20,13 +22,14 @@ class OrderElement {
       this.commentIsExtra = false,
       this.extraPrice = 0,
       this.hasPromotion = false,
-      this.promotion});
+      this.promotion}) : uuid = UniqueKey();
 
   OrderElement.comment(
       {required this.article, required this.quantity, required this.comment})
       : commentIsExtra = false,
         extraPrice = 0,
-        hasPromotion = false;
+        hasPromotion = false,
+        uuid = UniqueKey();
 
   OrderElement.withExtra(
       {required this.article,
@@ -34,15 +37,18 @@ class OrderElement {
       required this.comment,
       required this.extraPrice})
       : commentIsExtra = true,
-        hasPromotion = false;
+        hasPromotion = false,
+        uuid = UniqueKey();
 
   OrderElement.withPromotion(
       {required this.article, required this.quantity, required this.promotion})
       : comment = "",
         commentIsExtra = false,
         extraPrice = 0,
-        hasPromotion = true;
+        hasPromotion = true,
+        uuid = UniqueKey();
 
+  UniqueKey uuid;
   Article article;
   int quantity;
   String comment;

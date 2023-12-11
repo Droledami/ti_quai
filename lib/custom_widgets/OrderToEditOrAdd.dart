@@ -33,14 +33,13 @@ class OrderToEditOrAdd extends StatefulWidget {
 }
 
 class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
-  bool hasOther = false;
-
   bool addingOrderElement = false;
   bool addingPromotion = false;
+  bool addingOther = false;
 
   bool editingOrderElement = false;
   OrderElement? orderElementInEdition;
-  int indexOrOrderElementToEdit = -1;
+  int indexOfOrderElementToEdit = -1;
 
   Promotion? promotionInEdition;
   String? articleRefOfPromotionInEdition;
@@ -104,33 +103,43 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
             ),
             TextDivider(text: "Menu", color: customColors.tertiary!),
             SizedBox(
-              height: 27.0 * widget.order.numberOfMenuArticles + 31.0 * nbComments,
+              height:
+                  27.0 * widget.order.numberOfMenuArticles + 31.0 * nbComments,
               child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: widget.order.orderElements.length,
-                  itemBuilder: (context, index){
-                    if (widget.order.orderElements[index].articleType == ArticleType.menu) {
+                  padding: EdgeInsets.zero,
+                  itemCount: widget.order.orderElements.length,
+                  itemBuilder: (context, index) {
+                    if (widget.order.orderElements[index].articleType ==
+                        ArticleType.menu) {
                       return GestureDetector(
                           onLongPress: () {
-                            orderElementInEdition = widget.order.orderElements[index];
-                            indexOrOrderElementToEdit = index;
-                            print(index);
+                            orderElementInEdition =
+                                widget.order.orderElements[index];
+                            indexOfOrderElementToEdit = index;
                             setState(() {
                               editingOrderElement = true;
                               addingOrderElement = false;
                             });
                           },
                           child: Dismissible(
-                            key: Key(index.toString()),
-                            background: DismissibleBackground(),
-                              onDismissed: (dismissDirection){
-                                widget.order.orderElements.removeAt(index);
+                              key: UniqueKey(),
+                              background: DismissibleBackground(),
+                              onDismissed: (dismissDirection) {
+                                widget.order.orderElements = widget
+                                    .order.orderElements
+                                    .where((orderElement) =>
+                                        orderElement.uuid !=
+                                        widget.order.orderElements[index].uuid)
+                                    .toList();
+                                setState(() {});
                               },
-                              child: OrderLineElement(orderElement: widget.order.orderElements[index])));
+                              child: OrderLineElement(
+                                  orderElement:
+                                      widget.order.orderElements[index])));
                     } else {
                       return SizedBox.shrink();
                     }
-              }),
+                  }),
             ),
             Builder(builder: (context) {
               if (addingOrderElement && !editingOrderElement) {
@@ -155,15 +164,14 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               } else if (editingOrderElement && !addingOrderElement) {
                 return AddOrEditOrderElementForm(
                   onCancel: () {
-                    print("orderElementInEdition à l'annulation : $orderElementInEdition");
                     setState(() {
                       editingOrderElement = false;
                       addingOrderElement = false;
                     });
                   },
                   onConfirmAdd: (OrderElement orderElement) {
-                    widget.order.orderElements[indexOrOrderElementToEdit] = orderElement;
-                    print("orderElementInEdition à la validation: $orderElement");
+                    widget.order.orderElements[indexOfOrderElementToEdit] =
+                        orderElement;
                     setState(() {
                       orderElementInEdition = orderElement;
                       editingOrderElement = false;
@@ -187,19 +195,14 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               }
             }),
             Column(
+              //TODO: crud pour les autres types d'articles
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Builder(builder: (context) {
-                  if (hasOther) {
-                    return TextDivider(
-                        text: "Autres", color: customColors.tertiary!);
-                  } else {
-                    return SizedBox.shrink();
-                  }
-                }),
+                TextDivider(text: "Autres", color: customColors.tertiary!),
                 Column(
                     children: widget.order.orderElements.map((orderElement) {
                   if (orderElement.articleType == ArticleType.other) {
-                    if (!hasOther) hasOther = true;
                     return OthersOrderLineElement(
                       productName: orderElement.articleName,
                       productPrice: orderElement.articlePrice,
@@ -209,6 +212,33 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                     return SizedBox.shrink();
                   }
                 }).toList()),
+                Builder(builder: (context) {
+                  if (addingOther) {
+                    return AddOrEditOtherForm(
+                      onConfirmAdd: (otherOrderElement) {
+                        setState(() {
+                          widget.order.orderElements.add(otherOrderElement);
+                          addingOther = false;
+                        });
+                      },
+                      onCancel: () {
+                        setState(() {
+                          addingOther = false;
+                        });
+                      },
+                    );
+                  } else {
+                    return SizedIconButton(
+                        color: customColors.primary!,
+                        spreadColor: customColors.primaryDark!,
+                        iconData: Icons.add,
+                        onTap: () {
+                          setState(() {
+                            addingOther = true;
+                          });
+                        });
+                  }
+                }),
               ],
             ),
             Column(
@@ -273,11 +303,14 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                         child: PromotionLine(
                           onDismissed: () {
                             orderElement.deletePromotion();
+                            setState(() {
+                              promotionInEdition = null;
+                              articleRefOfPromotionInEdition = null;
+                            });
                           },
                           promotion: orderElement.promotion!,
                           linkedArticle: orderElement.article,
-                          key: Key(orderElement.promotion!.name +
-                              orderElement.articleReference),
+                          key: UniqueKey(),
                         ),
                       );
                     } else if (orderElement.hasPromotion &&
@@ -292,11 +325,14 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                       return PromotionLine(
                         onDismissed: () {
                           orderElement.deletePromotion();
+                          setState(() {
+                            promotionInEdition = null;
+                            articleRefOfPromotionInEdition = null;
+                          });
                         },
                         promotion: orderElement.promotion!,
                         linkedArticle: orderElement.article,
-                        key: Key(orderElement.promotion!.name +
-                            orderElement.articleReference),
+                        key: UniqueKey(),
                       );
                     } else {
                       return SizedBox();
@@ -377,6 +413,189 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   }
 }
 
+class AddOrEditOtherForm extends StatefulWidget {
+  const AddOrEditOtherForm(
+      {super.key,
+      required this.onCancel,
+      required this.onConfirmAdd,
+      this.otherToEdit});
+
+  final Function onCancel;
+  final Function(OrderElement) onConfirmAdd;
+
+  final OrderElement? otherToEdit;
+
+  @override
+  State<AddOrEditOtherForm> createState() => _AddOrEditOtherFormState();
+}
+
+class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
+  OrderElement otherOrderElement =
+      OrderElement(article: Article.other(name: "", price: -1), quantity: 1);
+
+  final TextEditingController _otherProductNameController =
+      TextEditingController();
+  final TextEditingController _quantityOtherProductController =
+      TextEditingController();
+  final TextEditingController _priceOtherProductController =
+      TextEditingController();
+
+  final _addOtherFormKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    if (widget.otherToEdit != null) {
+      otherOrderElement = widget.otherToEdit!.copy();
+    }
+
+    _otherProductNameController.addListener(() {
+      otherOrderElement.article.name = _otherProductNameController.text;
+    });
+
+    _quantityOtherProductController.addListener(() {
+      if (int.tryParse(_quantityOtherProductController.text) != null) {
+        otherOrderElement.quantity =
+            int.parse(_quantityOtherProductController.text);
+      }
+    });
+
+    //Le truc de gros bg jpp
+    _priceOtherProductController.addListener(() {
+      String content = _priceOtherProductController.text;
+      if (RegExp(r"^[1-9][0-9]*[,.]?[0-9]{0,2}€?$").hasMatch(content)) {
+        if (!content.contains("€")) content += "€";
+        _priceOtherProductController.value = _priceOtherProductController.value
+            .copyWith(
+                text: content,
+                selection: TextSelection(
+                    baseOffset: content.length - 1,
+                    extentOffset: content.length - 1));
+        content = content.replaceFirst(",",
+            "."); //To be able to parse into double because decimals are made with commas in french
+        otherOrderElement.article.price =
+            double.parse(content.substring(0, content.length - 1));
+        print(double.parse(content.substring(0, content.length - 1)));
+      } else if (content.length > 1) {
+        String previousValue;
+        content.contains("€")
+            ? previousValue = content.substring(0, content.length - 2)
+            : previousValue = content.substring(0, content.length - 1);
+        if (!previousValue.contains("€")) previousValue += "€";
+        _priceOtherProductController.value = _priceOtherProductController.value
+            .copyWith(
+                text: previousValue,
+                selection: TextSelection(
+                    baseOffset: content.length - 1,
+                    extentOffset: content.length - 1));
+      } else {
+        _priceOtherProductController.text = "";
+      }
+    });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool editingOther = widget.otherToEdit != null;
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Form(
+      key: _addOtherFormKey,
+      child: Flexible(
+        fit: FlexFit.loose,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10, right: 10),
+          child: Container(
+            padding: EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: customColors.primaryDark!, width: 3)),
+            child: Column(
+              children: [
+                Text(
+                    "${editingOther ? "Modification" : "Ajout"} d'un produit ${editingOther ? "(nom du produit à modifier)" : ""}"),
+                Row(
+                  children: [
+                    EntryBox(
+                      validator: (value){
+                        if(value != null && value.isNotEmpty){
+                          return null;
+                        }else{
+                          return "Veuillez donner le nom du produit";
+                        }
+                      },
+                        orderEntryType: OrderEntry.text,
+                        maxLength: 150,
+                        placeholder: "Nom du produit...",
+                        textEditingController: _otherProductNameController,
+                        marginLeft: 10),
+                  ],
+                ),
+                Row(
+                  children: [
+                    EntryBox(
+                      validator: (value){
+                        if(value != null && value.isNotEmpty && RegExp(r"^[1-9][0-9]*$").hasMatch(value)){
+                          return null;
+                        }else{
+                          return "Erreur Quantité";
+                        }
+                      },
+                      orderEntryType: OrderEntry.quantity,
+                      maxLength: 2,
+                      placeholder: "Quantité...",
+                      textEditingController: _quantityOtherProductController,
+                      marginLeft: 10,
+                    ),
+                    EntryBox(
+                      validator: (value){
+                        if(value != null && value.isNotEmpty && RegExp(r"^[1-9][0-9]*[,.]?[0-9]{0,2}€?$").hasMatch(value)){
+                          return null;
+                        }else{
+                          return "Erreur Prix";
+                        }
+                      },
+                      orderEntryType: OrderEntry.price,
+                      maxLength: 10,
+                      placeholder: "Prix du produit...",
+                      textEditingController: _priceOtherProductController,
+                      marginLeft: 5,
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    FlexIconButton(
+                      onTap: () => widget.onCancel(),
+                      color: customColors.primary!,
+                      spreadColor: customColors.primaryDark!,
+                      iconData: Icons.backspace,
+                      marginLeft: 10,
+                    ),
+                    Expanded(flex: 2, child: SizedBox.shrink()),
+                    FlexIconButton(
+                      onTap: () {
+                        if (_addOtherFormKey.currentState!.validate()) {
+                          //Apeller la validation puis si correct appeler widget.onConfirmAdd
+                          widget.onConfirmAdd(otherOrderElement);
+                        }
+                      },
+                      color: customColors.primary!,
+                      spreadColor: customColors.primaryDark!,
+                      iconData: editingOther ? Icons.check_outlined : Icons.add,
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AddOrEditOrderElementForm extends StatefulWidget {
   const AddOrEditOrderElementForm(
       {super.key,
@@ -424,7 +643,8 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
       _numberController.text = orderElement.articleNumber.toString();
       _subAlphaController.text = orderElement.articleSubAlpha;
       _commentController.text = orderElement.comment;
-      _extraPriceController.text = orderElement.extraPrice > 0 ?"${orderElement.extraPrice}€" : "";
+      _extraPriceController.text =
+          orderElement.extraPrice > 0 ? "${orderElement.extraPrice}€" : "";
     }
 
     _quantityController.addListener(() {
@@ -447,6 +667,8 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
     _subAlphaController.addListener(() {
       orderElement.article.subAlpha = _subAlphaController.text.toLowerCase();
     });
+
+    //TODO: ATTENTION les prix c'est des double, faut changer ça
     _extraPriceController.addListener(() {
       if (!RegExp(r"^[0-9]+€?").hasMatch(_extraPriceController.text)) {
         _extraPriceController.text = "";
@@ -573,8 +795,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                             spreadColor: customColors.primaryDark!,
                             iconData: Icons.backspace,
                             marginLeft: 10,
-                            onTap: () => {
-                              widget.onCancel()}),
+                            onTap: () => {widget.onCancel()}),
                         FlexIconButton(
                           color: customColors.primary!,
                           spreadColor: customColors.primaryDark!,
@@ -600,10 +821,9 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                         FlexIconButton(
                           color: customColors.primary!,
                           spreadColor: customColors.primaryDark!,
-                          iconData: editingOrder? Icons.check : Icons.add,
+                          iconData: editingOrder ? Icons.check : Icons.add,
                           marginRight: 0,
                           onTap: () {
-                            print("Dans le bouton: $orderElement");
                             if (_addOrderElementFormKey.currentState!
                                 .validate()) {
                               widget.onConfirmAdd(orderElement);
@@ -694,7 +914,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                   orderElement.commentIsExtra = true;
                                   orderElement.extraPrice =
                                       double.parse(extraPriceStr);
-                                }else{
+                                } else {
                                   _extraPriceController.text = "";
                                   orderElement.commentIsExtra = false;
                                   orderElement.extraPrice = 0;
