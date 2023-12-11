@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
 import 'package:ti_quai/enums/EntryType.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
+import 'package:ti_quai/functions/functions.dart';
 import 'package:ti_quai/models/Article.dart';
 
 import '../enums/ArticleType.dart';
@@ -459,37 +460,9 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
       }
     });
 
-    //Le truc de gros bg jpp
     _priceOtherProductController.addListener(() {
-      String content = _priceOtherProductController.text;
-      if (RegExp(r"^[1-9][0-9]*[,.]?[0-9]{0,2}€?$").hasMatch(content)) {
-        if (!content.contains("€")) content += "€";
-        _priceOtherProductController.value = _priceOtherProductController.value
-            .copyWith(
-                text: content,
-                selection: TextSelection(
-                    baseOffset: content.length - 1,
-                    extentOffset: content.length - 1));
-        content = content.replaceFirst(",",
-            "."); //To be able to parse into double because decimals are made with commas in french
-        otherOrderElement.article.price =
-            double.parse(content.substring(0, content.length - 1));
-        print(double.parse(content.substring(0, content.length - 1)));
-      } else if (content.length > 1) {
-        String previousValue;
-        content.contains("€")
-            ? previousValue = content.substring(0, content.length - 2)
-            : previousValue = content.substring(0, content.length - 1);
-        if (!previousValue.contains("€")) previousValue += "€";
-        _priceOtherProductController.value = _priceOtherProductController.value
-            .copyWith(
-                text: previousValue,
-                selection: TextSelection(
-                    baseOffset: content.length - 1,
-                    extentOffset: content.length - 1));
-      } else {
-        _priceOtherProductController.text = "";
-      }
+      double? price = forcePriceFormat(_priceOtherProductController, firstDigitCanBeZero: false, mustBeNegative: false);
+      if(price != null) otherOrderElement.article.price = price;
     });
 
     super.initState();
@@ -668,15 +641,8 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
       orderElement.article.subAlpha = _subAlphaController.text.toLowerCase();
     });
 
-    //TODO: ATTENTION les prix c'est des double, faut changer ça
     _extraPriceController.addListener(() {
-      if (!RegExp(r"^[0-9]+€?").hasMatch(_extraPriceController.text)) {
-        _extraPriceController.text = "";
-      } else if (_extraPriceController.text.isNotEmpty &&
-          !_extraPriceController.text.contains("€")) {
-        String content = _extraPriceController.text;
-        _extraPriceController.text = "$content€";
-      }
+      forcePriceFormat(_extraPriceController, firstDigitCanBeZero: true, mustBeNegative: false);
     });
   }
 
@@ -867,7 +833,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                               return EntryBox(
                                 validator: (value) {
                                   if (value != null &&
-                                      RegExp(r"^[1-9][0-9]?€$")
+                                      RegExp(r"^[0-9]+[,.]?[0-9]{0,2}€$")
                                           .hasMatch(value)) {
                                     return null;
                                   } else {
@@ -876,7 +842,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                 },
                                 orderEntryType: OrderEntry.price,
                                 flex: 1,
-                                maxLength: 2,
+                                maxLength: 5,
                                 placeholder: "Prix",
                                 textEditingController: _extraPriceController,
                                 marginLeft: 6,
@@ -908,12 +874,10 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                   .validate()) {
                                 orderElement.comment = _commentController.text;
                                 if (addingExtra) {
-                                  String extraPriceStr = _extraPriceController
-                                      .text
-                                      .replaceFirst("€", "", 1);
+                                  double extraPrice = forcePriceFormat(_extraPriceController, firstDigitCanBeZero: true, mustBeNegative: false)!;
                                   orderElement.commentIsExtra = true;
                                   orderElement.extraPrice =
-                                      double.parse(extraPriceStr);
+                                      extraPrice;
                                 } else {
                                   _extraPriceController.text = "";
                                   orderElement.commentIsExtra = false;
@@ -997,31 +961,12 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
     _promotionNameController.addListener(() {
       promotion.name = _promotionNameController.text;
     });
-    //forces -XX€ format and always sets cursor position at before last
+
     _discountValueController.addListener(() {
-      if (RegExp(r"^-?[1-9][0-9]*€?$")
-              .hasMatch(_discountValueController.text) &&
-          _discountValueController.text.isNotEmpty) {
-        String content = _discountValueController.text;
-        if (!content.contains("-")) {
-          content = "-$content";
-        }
-        if (!content.contains("€")) {
-          content = "$content€";
-        }
-        _discountValueController.value = _discountValueController.value
-            .copyWith(
-                text: content,
-                selection: TextSelection(
-                    baseOffset: content.length - 1,
-                    extentOffset: content.length - 1));
-        double discountValue =
-            double.parse(content.substring(1, content.length - 1));
-        promotion.discountValue = discountValue;
-      } else {
-        _discountValueController.text = "";
-      }
+      double? discountValue = forcePriceFormat(_discountValueController, firstDigitCanBeZero: true, mustBeNegative: true);
+      if(discountValue !=null) promotion.discountValue = discountValue;
     });
+
     //Forces case specific format like A followed by any number with the optionnal subalpha (ex: A326b or Z78)
     _linkedArticleController.addListener(() {
       if (RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
@@ -1112,15 +1057,15 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                     EntryBox(
                       validator: (value) {
                         if (value != null &&
-                            RegExp(r"^-[1-9][0-9]?€$").hasMatch(value)) {
+                            RegExp(r"^-[0-9]+[,.]?[0-9]{0,2}?€$").hasMatch(value)) {
                           return null;
                         } else {
                           return "Erreur réduction";
                         }
                       },
-                      flex: 1,
+                      flex: 2,
                       orderEntryType: OrderEntry.price,
-                      maxLength: 4,
+                      maxLength: 7,
                       placeholder: "-?€",
                       textEditingController: _discountValueController,
                       marginLeft: 10,
