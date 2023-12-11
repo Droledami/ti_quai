@@ -7,8 +7,8 @@ import '../models/Promotion.dart';
 import '../theme.dart';
 import 'LittleCard.dart';
 
-class PromotionLineLong extends StatelessWidget {
-  const PromotionLineLong(
+class PromotionLine extends StatelessWidget {
+  const PromotionLine(
       {required super.key,
       required this.promotion,
       required this.linkedArticle,

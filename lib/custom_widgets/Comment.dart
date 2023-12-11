@@ -13,7 +13,7 @@ class Comment extends StatelessWidget {
     final CustomColors customColors =
     Theme.of(context).extension<CustomColors>()!;
     return Padding(
-      padding: EdgeInsets.only(left: 25, top: 5, bottom: 2, right: 10),
+      padding: EdgeInsets.only(left: 25, top: 2, bottom: 5, right: 10),
       child: Container(
         width: 450,
         padding: EdgeInsets.only(left: 2, right: 2, top: 3, bottom: 2),
@@ -23,7 +23,7 @@ class Comment extends StatelessWidget {
         ),
         child: Text(
           '${isExtra ? "Supplément" : "Commentaire"}: $comment',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
     );

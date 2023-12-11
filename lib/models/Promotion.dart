@@ -9,4 +9,11 @@ class Promotion {
 
   double discountValue;
   String name;
+
+  Promotion copy(Promotion promotion){
+    return Promotion(
+      discountValue: promotion.discountValue,
+      name: promotion.name,
+    );
+  }
 }

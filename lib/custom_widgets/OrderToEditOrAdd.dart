@@ -1,5 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
 import 'package:ti_quai/enums/EntryType.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
@@ -16,7 +16,7 @@ import 'LittleCard.dart';
 import 'OrderHeader.dart';
 import 'OrderLineElement.dart';
 import 'OthersOrderLineElement.dart';
-import 'PromotionLineLong.dart';
+import 'PromotionLine.dart';
 import 'SizedIconButton.dart';
 import 'TextDivider.dart';
 
@@ -37,19 +37,20 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   bool addingOrderElement = false;
   bool addingPromotion = false;
 
+  bool editingOrderElement = false;
   OrderElement? orderElementInEdition;
+  int indexOrOrderElementToEdit = -1;
+
   Promotion? promotionInEdition;
   String? articleRefOfPromotionInEdition;
-
-  bool isDeletingPromotion = false;
-  bool isDeletingOrderElement = false;
 
   TextEditingController _tableNumberController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _tableNumberController.text = widget.order.tableNumber.toString();
+    _tableNumberController.text =
+        widget.order.tableNumber < 1 ? "" : widget.order.tableNumber.toString();
 
     //Blocks anything other than a valid entry
     _tableNumberController.addListener(() {
@@ -77,6 +78,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
 
   @override
   Widget build(BuildContext context) {
+    int nbComments = widget.order.numberOfComments;
     final hasPromotion = widget.order.hasAnyPromotions;
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
@@ -100,36 +102,72 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               isEditMode: widget.isEditMode,
             ),
             TextDivider(text: "Menu", color: customColors.tertiary!),
-            Column(
-                children: widget.order.orderElements.map((orderElement) {
-              if (orderElement.articleType == ArticleType.menu) {
-                return OrderLineElement(orderElement: orderElement);
+            SizedBox(
+              height: 27.0 * widget.order.orderElements.length + 31.0 * nbComments,
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: widget.order.orderElements.length,
+                  itemBuilder: (context, index){
+                    if (widget.order.orderElements[index].articleType == ArticleType.menu) {
+                      return GestureDetector(
+                          onLongPress: () {
+                            orderElementInEdition = widget.order.orderElements[index];
+                            indexOrOrderElementToEdit = index;
+                            print(index);
+                            setState(() {
+                              editingOrderElement = true;
+                              addingOrderElement = false;
+                            });
+                          },
+                          child: OrderLineElement(orderElement: widget.order.orderElements[index]));
+                    } else {
+                      return SizedBox.shrink();
+                    }
+              }),
+            ),
+            Builder(builder: (context) {
+              if (addingOrderElement && !editingOrderElement) {
+                return AddOrEditOrderElementForm(
+                  onCancel: () {
+                    orderElementInEdition = null;
+                    setState(() {
+                      editingOrderElement = false;
+                      addingOrderElement = false;
+                    });
+                  },
+                  onConfirmAdd: (OrderElement orderElement) {
+                    orderElementInEdition = null;
+                    setState(() {
+                      editingOrderElement = false;
+                      addingOrderElement = false;
+                      //TODO: déduire le prix via une db ou un fichier
+                      widget.order.orderElements.add(orderElement);
+                    });
+                  },
+                );
+              } else if (editingOrderElement && !addingOrderElement) {
+                return AddOrEditOrderElementForm(
+                  onCancel: () {
+                    print("orderElementInEdition à l'annulation : $orderElementInEdition");
+                    setState(() {
+                      editingOrderElement = false;
+                      addingOrderElement = false;
+                    });
+                  },
+                  onConfirmAdd: (OrderElement orderElement) {
+                    widget.order.orderElements[indexOrOrderElementToEdit] = orderElement;
+                    print("orderElementInEdition à la validation: $orderElement");
+                    setState(() {
+                      orderElementInEdition = orderElement;
+                      editingOrderElement = false;
+                      addingOrderElement = false;
+                      //TODO: c'est ici que ça bosse
+                      //TODO: déduire le prix via une db ou un fichier
+                    });
+                  },
+                  orderElementToEdit: orderElementInEdition,
+                );
               } else {
-                return SizedBox.shrink();
-              }
-            }).toList()),
-            Builder(builder: (context) {
-              return addingOrderElement
-                  ? AddOrEditOrderElementForm(
-                      onCancel: () {
-                        setState(() {
-                          addingOrderElement = false;
-                        });
-                      },
-                      onConfirmAdd: (OrderElement orderElement) {
-                        setState(() {
-                          addingOrderElement = false;
-                          print(
-                              "${orderElement.quantity} ${orderElement.articleAlpha} ${orderElement.articleNumber}, ${orderElement.articleSubAlpha}");
-                          //TODO: déduire le prix via une db ou un fichier
-                          widget.order.orderElements.add(orderElement);
-                        });
-                      },
-                    )
-                  : SizedBox.shrink();
-            }),
-            Builder(builder: (context) {
-              if (!addingOrderElement) {
                 return SizedIconButton(
                   onTap: () {
                     setState(() {
@@ -140,8 +178,6 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   spreadColor: customColors.primaryDark!,
                   iconData: Icons.add,
                 );
-              } else {
-                return SizedBox.shrink();
               }
             }),
             Column(
@@ -220,21 +256,22 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                         orderElement.promotion != null) {
                       return GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          if(promotionInEdition != null) return;
+                        onLongPress: () {
+                          if (promotionInEdition != null) return;
                           setState(() {
                             promotionInEdition = orderElement.promotion;
                             articleRefOfPromotionInEdition =
                                 orderElement.articleReference;
                           });
                         },
-                        child: PromotionLineLong(
-                          onDismissed: (){
+                        child: PromotionLine(
+                          onDismissed: () {
                             orderElement.deletePromotion();
                           },
-                            promotion: orderElement.promotion!,
-                            linkedArticle: orderElement.article,
-                          key: Key(orderElement.promotion!.name + orderElement.articleReference),
+                          promotion: orderElement.promotion!,
+                          linkedArticle: orderElement.article,
+                          key: Key(orderElement.promotion!.name +
+                              orderElement.articleReference),
                         ),
                       );
                     } else if (orderElement.hasPromotion &&
@@ -246,14 +283,15 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                         orderElement.promotion != null) {
                       print(
                           "Warning, an order element's promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
-                      return PromotionLineLong(
-                        onDismissed: (){
+                      return PromotionLine(
+                        onDismissed: () {
                           orderElement.deletePromotion();
                         },
-                          promotion: orderElement.promotion!,
-                          linkedArticle: orderElement.article,
-                        key: Key(orderElement.promotion!.name + orderElement.articleReference),
-                        );
+                        promotion: orderElement.promotion!,
+                        linkedArticle: orderElement.article,
+                        key: Key(orderElement.promotion!.name +
+                            orderElement.articleReference),
+                      );
                     } else {
                       return SizedBox();
                     }
@@ -265,12 +303,12 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               if (addingPromotion) {
                 return AddOrEditPromotionForm(onCancel: () {
                   setState(() {
+                    promotionInEdition = null;
                     addingPromotion = false;
                   });
                 }, onConfirmAdd: (promotion, articleRef) {
-                  print(
-                      '${promotion.name} ${promotion.discountValue} articleRef: $articleRef');
                   setState(() {
+                    promotionInEdition = null;
                     addingPromotion = false;
                   });
                   OrderElement? orderElement =
@@ -279,23 +317,28 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   orderElement?.hasPromotion = true;
                 });
               } else if (promotionInEdition != null) {
-                return AddOrEditPromotionForm(onCancel: () {
-                  setState(() {
-                    promotionInEdition = null;
-                  });
-                }, onConfirmAdd: (promotion, articleRef) {
-                  setState(() {
-                    promotionInEdition = null;
-                  });
-                  OrderElement? orderElement =
-                      widget.order.getOrderElementByRef(articleRef);
-                  orderElement?.promotion = promotion;
-                },
+                return AddOrEditPromotionForm(
+                  onCancel: () {
+                    setState(() {
+                      addingPromotion = false;
+                      promotionInEdition = null;
+                    });
+                  },
+                  onConfirmAdd: (promotion, articleRef) {
+                    setState(() {
+                      addingPromotion = false;
+                      promotionInEdition = null;
+                    });
+                    OrderElement? orderElement =
+                        widget.order.getOrderElementByRef(articleRef);
+                    orderElement?.promotion = promotion;
+                  },
                   promotionToEdit: promotionInEdition,
                   articleRefOfPromotionToEdit: articleRefOfPromotionInEdition,
                 );
               } else {
-                return SizedIconButton( //The button is only show if we are not adding or editing anything
+                return SizedIconButton(
+                  //The button is only show if we are not adding or editing anything
                   onTap: () {
                     setState(() {
                       addingPromotion = true;
@@ -329,12 +372,11 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
 }
 
 class AddOrEditOrderElementForm extends StatefulWidget {
-  const AddOrEditOrderElementForm({
-    super.key,
-    required this.onCancel,
-    required this.onConfirmAdd,
-    this.orderElementToEdit
-  });
+  const AddOrEditOrderElementForm(
+      {super.key,
+      required this.onCancel,
+      required this.onConfirmAdd,
+      this.orderElementToEdit});
 
   final Function onCancel;
   final Function(OrderElement) onConfirmAdd;
@@ -342,7 +384,8 @@ class AddOrEditOrderElementForm extends StatefulWidget {
   final OrderElement? orderElementToEdit;
 
   @override
-  State<AddOrEditOrderElementForm> createState() => _AddOrEditOrderElementFormState();
+  State<AddOrEditOrderElementForm> createState() =>
+      _AddOrEditOrderElementFormState();
 }
 
 class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
@@ -365,7 +408,19 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
   @override
   void initState() {
     super.initState();
-    _quantityController.text = "1";
+    if (widget.orderElementToEdit == null) _quantityController.text = "1";
+
+    if (widget.orderElementToEdit != null) {
+      orderElement = widget.orderElementToEdit!.copy();
+
+      _quantityController.text = orderElement.quantity.toString();
+      _alphaController.text = orderElement.articleAlpha;
+      _numberController.text = orderElement.articleNumber.toString();
+      _subAlphaController.text = orderElement.articleSubAlpha;
+      _commentController.text = orderElement.comment;
+      _extraPriceController.text = orderElement.extraPrice > 0 ?"${orderElement.extraPrice}€" : "";
+    }
+
     _quantityController.addListener(() {
       if (int.tryParse(_quantityController.text) != null) {
         orderElement.quantity = int.parse(_quantityController.text);
@@ -428,6 +483,8 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
               if (!addingComment && !addingExtra) {
                 return Column(
                   children: [
+                    Text(
+                        "${editingOrder ? "Modification" : "Ajout"} d'une commande${editingOrder ? "(${orderElement.articleReference})" : ""}"),
                     Row(
                       children: ["Quantité", "Alphabet", "Numéro", "Sous-alpha"]
                           .map((header) {
@@ -490,7 +547,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                       EntryBox(
                         validator: (value) {
                           if (value != null &&
-                              RegExp(r"^[a-zA-Z]$").hasMatch(value)) {
+                              RegExp(r"^[a-zA-Z]?$").hasMatch(value)) {
                             return null;
                           } else {
                             return "Erreur s-alpha";
@@ -510,16 +567,16 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                             spreadColor: customColors.primaryDark!,
                             iconData: Icons.backspace,
                             marginLeft: 10,
-                            onTap: () => {widget.onCancel()}),
+                            onTap: () => {
+                              widget.onCancel()}),
                         FlexIconButton(
                           color: customColors.primary!,
                           spreadColor: customColors.primaryDark!,
                           iconData: Icons.comment,
                           onTap: () {
-                            orderElement.comment = _commentController.text;
-                            orderElement.commentIsExtra = false;
                             setState(() {
                               addingComment = true;
+                              addingExtra = false;
                             });
                           },
                         ),
@@ -528,19 +585,19 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                           spreadColor: customColors.primaryDark!,
                           iconData: Icons.assignment_add,
                           onTap: () {
-                            orderElement.comment = _commentController.text;
-                            orderElement.commentIsExtra = true;
                             setState(() {
                               addingExtra = true;
+                              addingComment = false;
                             });
                           },
                         ),
                         FlexIconButton(
                           color: customColors.primary!,
                           spreadColor: customColors.primaryDark!,
-                          iconData: Icons.add,
+                          iconData: editingOrder? Icons.check : Icons.add,
                           marginRight: 0,
                           onTap: () {
+                            print("Dans le bouton: $orderElement");
                             if (_addOrderElementFormKey.currentState!
                                 .validate()) {
                               widget.onConfirmAdd(orderElement);
@@ -628,8 +685,13 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                   String extraPriceStr = _extraPriceController
                                       .text
                                       .replaceFirst("€", "", 1);
+                                  orderElement.commentIsExtra = true;
                                   orderElement.extraPrice =
                                       double.parse(extraPriceStr);
+                                }else{
+                                  _extraPriceController.text = "";
+                                  orderElement.commentIsExtra = false;
+                                  orderElement.extraPrice = 0;
                                 }
                                 setState(() {
                                   addingComment = false;
@@ -639,7 +701,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                             },
                             color: customColors.primary!,
                             spreadColor: customColors.primaryDark!,
-                            iconData: Icons.add,
+                            iconData: Icons.check,
                           ),
                         ],
                       )
@@ -858,7 +920,8 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                       },
                       color: customColors.secondary!,
                       spreadColor: customColors.secondaryLight!,
-                      iconData: editingPromotion? Icons.check_outlined : Icons.add,
+                      iconData:
+                          editingPromotion ? Icons.check_outlined : Icons.add,
                     ),
                   ],
                 )
@@ -870,4 +933,3 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
     );
   }
 }
-

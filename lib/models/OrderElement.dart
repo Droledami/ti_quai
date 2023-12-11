@@ -51,7 +51,7 @@ class OrderElement {
   bool hasPromotion;
   Promotion? promotion;
 
-  String get fullDescription{
+  String get fullDescription {
     return "$quantity $articleReference $comment";
   }
 
@@ -101,8 +101,24 @@ class OrderElement {
     return null;
   }
 
-  void deletePromotion(){
+  void deletePromotion() {
     promotion = null;
     hasPromotion = false;
+  }
+
+  @override
+  String toString() {
+    return "$quantity $articleReference pour $price ${comment != "" ? "Commentaire : $comment" : ""}${commentIsExtra ? " Supplément : $extraPrice" : ""}";
+  }
+
+  OrderElement copy() {
+    return OrderElement(
+        article: article.copy(article),
+        quantity: quantity,
+        comment: comment,
+        commentIsExtra: commentIsExtra,
+        extraPrice: extraPrice,
+        hasPromotion: hasPromotion,
+        promotion: promotion?.copy(promotion!));
   }
 }

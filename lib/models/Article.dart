@@ -8,6 +8,15 @@ class Article {
   static const String keyType = "type";
   static const String keyPrice = "price";
 
+  Article._({
+    required this.alpha,
+    required this.number,
+    required this.subAlpha,
+    required this.name,
+    required this.type,
+    required this.price,
+  });
+
   Article.empty({required this.type}) : alpha = "", number = -1, subAlpha="", name="", price=-1;
 
   Article.menu({
@@ -30,4 +39,15 @@ class Article {
   String name;
   ArticleType type;
   double price;
+
+  Article copy(Article article){
+    return Article._(
+      alpha: article.alpha,
+      number: article.number,
+      subAlpha: article.subAlpha,
+      name: article.name,
+      type: article.type,
+      price: article.price,
+    );
+  }
 }

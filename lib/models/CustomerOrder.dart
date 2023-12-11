@@ -46,7 +46,6 @@ class CustomerOrder {
     return totalPrice - totalDiscount;
   }
 
-  //TODO: Un peu chiant ça, je le calcule déjà au dessus, allô comment faire ?
   double get totalDiscount {
     double totalDiscount = 0;
     for (OrderElement orderElement in orderElements) {
@@ -64,6 +63,16 @@ class CustomerOrder {
       }
     }
     return false;
+  }
+
+  int get numberOfComments{
+    int nbComments=0;
+    for (OrderElement orderElement in orderElements){
+      if(orderElement.comment != ""){
+        nbComments++;
+      }
+    }
+    return nbComments;
   }
 
   OrderElement? getOrderElementByRef(String ref){
