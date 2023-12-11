@@ -10,6 +10,7 @@ import '../models/CustomerOrder.dart';
 import '../models/OrderElement.dart';
 import '../models/Promotion.dart';
 import '../theme.dart';
+import 'DismissibleBackground.dart';
 import 'FlexIconButton.dart';
 import 'GreatTotal.dart';
 import 'LittleCard.dart';
@@ -103,7 +104,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
             ),
             TextDivider(text: "Menu", color: customColors.tertiary!),
             SizedBox(
-              height: 27.0 * widget.order.orderElements.length + 31.0 * nbComments,
+              height: 27.0 * widget.order.numberOfMenuArticles + 31.0 * nbComments,
               child: ListView.builder(
                 padding: EdgeInsets.zero,
                 itemCount: widget.order.orderElements.length,
@@ -119,7 +120,13 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                               addingOrderElement = false;
                             });
                           },
-                          child: OrderLineElement(orderElement: widget.order.orderElements[index]));
+                          child: Dismissible(
+                            key: Key(index.toString()),
+                            background: DismissibleBackground(),
+                              onDismissed: (dismissDirection){
+                                widget.order.orderElements.removeAt(index);
+                              },
+                              child: OrderLineElement(orderElement: widget.order.orderElements[index])));
                     } else {
                       return SizedBox.shrink();
                     }
@@ -161,7 +168,6 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                       orderElementInEdition = orderElement;
                       editingOrderElement = false;
                       addingOrderElement = false;
-                      //TODO: c'est ici que ça bosse
                       //TODO: déduire le prix via une db ou un fichier
                     });
                   },

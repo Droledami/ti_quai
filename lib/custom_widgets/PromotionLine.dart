@@ -5,6 +5,7 @@ import 'package:ti_quai/custom_widgets/SizedIconButton.dart';
 import '../models/Article.dart';
 import '../models/Promotion.dart';
 import '../theme.dart';
+import 'DismissibleBackground.dart';
 import 'LittleCard.dart';
 
 class PromotionLine extends StatelessWidget {
@@ -28,16 +29,7 @@ class PromotionLine extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Dismissible(
         key: key!,
-        background: Container(
-          color: Colors.red,
-          child: Row(
-            children: [
-              Icon(Icons.delete),
-              Expanded(flex: 8,child: SizedBox.shrink()),
-              Icon(Icons.delete),
-            ],
-          ),
-        ),
+        background: DismissibleBackground(),
         onDismissed: (dismissDirection) {
           onDismissed();
         },

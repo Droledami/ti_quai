@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
 
+import '../enums/ArticleType.dart';
 import '../main.dart';
 import 'OrderElement.dart';
 
@@ -73,6 +74,27 @@ class CustomerOrder {
       }
     }
     return nbComments;
+  }
+
+  int get numberOfMenuArticles{
+    int nb=0;
+    for (OrderElement orderElement in orderElements){
+      if(orderElement.article.type == ArticleType.menu){
+        nb++;
+      }
+    }
+    print(nb);
+    return nb;
+  }
+
+  int get numberOfOtherArticles{
+    int nb=0;
+    for (OrderElement orderElement in orderElements){
+      if(orderElement.article.type == ArticleType.other){
+        nb++;
+      }
+    }
+    return nb;
   }
 
   OrderElement? getOrderElementByRef(String ref){
