@@ -8,6 +8,7 @@ import 'package:ti_quai/models/OrderElement.dart';
 import '../models/Promotion.dart';
 
 class FirestoreService {
+  //Order operations
   final CollectionReference _orderCollection =
       FirebaseFirestore.instance.collection("Order");
 
@@ -24,7 +25,7 @@ class FirestoreService {
         }
         return CustomerOrder(
             id: doc.id,
-            tableNumber: data[CustomerOrder.keyTableNumber],
+            tableNumber: (data[CustomerOrder.keyTableNumber] as num).toInt(),
             date: (data[CustomerOrder.keyDate] as Timestamp).toDate(),
             orderElements: orderElementList,
             paymentMethod: data[CustomerOrder.keyPaymentMethod] ==
@@ -49,19 +50,21 @@ class FirestoreService {
       orderElementToAdd.comment = oe[OrderElement.keyComment];
       if (oe[OrderElement.keyCommentIsExtra]) {
         orderElementToAdd.commentIsExtra = true;
-        orderElementToAdd.extraPrice = oe[OrderElement.keyExtraPrice];
+        orderElementToAdd.extraPrice = (oe[OrderElement.keyExtraPrice] as num).toDouble();
       }
     }
     return orderElementToAdd;
   }
 
-  void addPromotionFromSnapshotToOrderElement(oe, OrderElement orderElementToAdd) {
+  void addPromotionFromSnapshotToOrderElement(
+      oe, OrderElement orderElementToAdd) {
     Promotion promotion;
     if (oe[OrderElement.keyHasPromotion]) {
       promotion = Promotion(
-          discountValue: oe[OrderElement.keyPromotion]
-              [Promotion.keyDiscountValue],
-          name: oe[OrderElement.keyPromotion][Promotion.keyName],);
+        discountValue: (oe[OrderElement.keyPromotion]
+            [Promotion.keyDiscountValue]as num).toDouble(),
+        name: oe[OrderElement.keyPromotion][Promotion.keyName],
+      );
       orderElementToAdd.hasPromotion = true;
       orderElementToAdd.promotion = promotion;
     }
@@ -77,15 +80,15 @@ class FirestoreService {
     switch (articleType) {
       case ArticleType.menu:
         fetchedArticle = Article.menu(
-            alpha: oe[OrderElement.keyArticle][Article.keyAlpha],
+            alpha: oe[OrderElement.keyArticle][Article.keyAlpha] as String,
             number: oe[OrderElement.keyArticle][Article.keyNumber],
-            subAlpha: oe[OrderElement.keyArticle][Article.keySubAlpha],
-            name: oe[OrderElement.keyArticle][Article.keyName],
-            price: oe[OrderElement.keyArticle][Article.keyPrice]);
+            subAlpha: oe[OrderElement.keyArticle][Article.keySubAlpha] as String,
+            name: oe[OrderElement.keyArticle][Article.keyName] as String,
+            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num).toDouble());
       case ArticleType.other:
         fetchedArticle = Article.other(
-            name: oe[OrderElement.keyArticle][Article.keyName],
-            price: oe[OrderElement.keyArticle][Article.keyPrice]);
+            name: oe[OrderElement.keyArticle][Article.keyName] as String,
+            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num).toDouble());
     }
 
     return fetchedArticle;
@@ -157,4 +160,51 @@ class FirestoreService {
     return _orderCollection.doc(orderId).delete();
   }
 
+  //Article operations
+  final CollectionReference _articleCollection =
+      FirebaseFirestore.instance.collection("Article");
+
+  Stream<List<Article>> getArticles() {
+    return _articleCollection.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        Article fetchedArticle = Article.menu(
+            id: doc.id,
+            alpha: data[Article.keyAlpha],
+            number: data[Article.keyNumber],
+            subAlpha: data[Article.keySubAlpha],
+            name: data[Article.keyName],
+            price: data[Article.keyPrice]);
+
+        return fetchedArticle;
+      }).toList();
+    });
+  }
+
+  Future<void> addArticle(Article article) {
+    return _articleCollection.add({
+      Article.keyAlpha: article.alpha,
+      Article.keyNumber: article.number,
+      Article.keySubAlpha: article.subAlpha,
+      Article.keyName: article.name,
+      Article.keyType: article.type.name,
+      Article.keyPrice: article.price
+    });
+  }
+
+  Future<void> updateArticle(Article article) {
+    return _articleCollection.doc(article.id).update({
+      Article.keyAlpha: article.alpha,
+      Article.keyNumber: article.number,
+      Article.keySubAlpha: article.subAlpha,
+      Article.keyName: article.name,
+      Article.keyType: article.type.name,
+      Article.keyPrice: article.price
+    });
+  }
+
+  Future<void> deleteArticle(String articleId) {
+    return _articleCollection.doc(articleId).delete();
+  }
 }

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../enums/EntryType.dart';
 import '../functions/functions.dart';
@@ -48,24 +51,30 @@ class EntryBox extends StatelessWidget {
             bottom: marginBottom,
             right: marginRight,
             left: marginLeft),
-        child: Container(
-          decoration: BoxDecoration(
-              color: customColors.cardQuarterTransparency,
-              borderRadius: BorderRadius.circular(7)),
-          child: TextFormField(
-            validator: validator,
-            maxLines: lines,
-            controller: textEditingController,
-            textAlign: textAlign,
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.only(left: 5, right: 5, bottom: orderEntryType == OrderEntry.tableNumber? 13 : 5),
-              hintText: placeholder,
-              counterText: "",
-              border: InputBorder.none,
+        child: Center(
+          child: Container(
+            decoration: BoxDecoration(
+                color: customColors.cardQuarterTransparency,
+                borderRadius: BorderRadius.circular(7)),
+            child: TextFormField(
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r"[0-9-€,.]"))
+              ],
+              validator: validator,
+              maxLines: lines,
+              controller: textEditingController,
+              textAlign: textAlign,
+              decoration: InputDecoration(
+                alignLabelWithHint: true,
+                contentPadding: EdgeInsets.only(left: 5, right: 5, bottom: 5),
+                hintText: placeholder,
+                counterText: "",
+                border: InputBorder.none,
+              ),
+              style: TextStyle(color: Colors.black87, fontSize: 28),
+              maxLength: maxLength,
+              keyboardType: TextInputType.text,//orderEntryToInputType(orderEntryType), //TODO: change input check based on OS I guess...
             ),
-            style: TextStyle(color: Colors.black87, fontSize: 28),
-            maxLength: maxLength,
-            keyboardType: orderEntryToInputType(orderEntryType),
           ),
         ),
       ),

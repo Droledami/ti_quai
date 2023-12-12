@@ -45,22 +45,26 @@ class OrderHeader extends StatelessWidget {
         ),
         child: Column(
           children: [
-            ListTile(
-              contentPadding:
-                  const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
-              leading: SizedBox(
-                width: isEditMode ? 135 : 110,
-                child: Row(
-                  children: [
-                    Text(
-                      'Table ${isEditMode ? "" : tableNumber}',
-                      style: TextStyle(
-                        height: 1,
-                        fontSize: 30,
-                      ),
-                    ),
-                    Builder(builder: (context) {
-                      if (isEditMode) {
+            Row(
+              children: [
+                Builder(builder: (context) {
+                  return Expanded(
+                    flex: isEditMode? 2: 1,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 10, top: 7, bottom: 10),
+                          child: Text(
+                            'Table ${isEditMode ? "" : tableNumber}',
+                            style: TextStyle(
+                              height: 1,
+                              fontSize: 30,
+                            ),
+                          ),
+                        ),
+                    Builder(
+                      builder: (context) {
+                        if(isEditMode){
                         return EntryBox(
                           validator: (value){
                             if(value != null && RegExp(r"^[1-9][0-9]?$").hasMatch(value)){
@@ -69,34 +73,48 @@ class OrderHeader extends StatelessWidget {
                               return "Erreur N°";
                             }
                           },
+                          marginTop: 7,
+                          marginRight: 20,
                           textEditingController: textEditingController!,
                           orderEntryType: OrderEntry.tableNumber,
                           maxLength: 2,
                           placeholder: "n°",
                         );
-                      } else {
-                        return SizedBox.shrink();
+                        }else{
+                          return SizedBox.shrink();
+                        }
                       }
-                    }),
-                  ],
+                    ),
+                      ],
+                    ),
+                  );
+                }),
+                Expanded(
+                  child: Text(
+                    articleNumber > 1
+                        ? "$articleNumber articles"
+                        : "$articleNumber article",
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      height: 1,
+                      fontSize: 24,
+                    ),
+                  ),
                 ),
-              ),
-              title: Text(
-                articleNumber > 1
-                    ? "$articleNumber articles"
-                    : "$articleNumber article",
-                style: TextStyle(
-                  height: 1,
-                  fontSize: 24,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10, top:10, bottom:10),
+                    child: Text(
+                      orderTime,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        height: 1,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              trailing: Text(
-                orderTime,
-                style: TextStyle(
-                  height: 1,
-                  fontSize: 24,
-                ),
-              ),
+              ]
             ),
             Row(
               children: [

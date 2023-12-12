@@ -523,6 +523,14 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
   }
 
   @override
+  void dispose() {
+    _quantityOtherProductController.dispose();
+    _otherProductNameController.dispose();
+    _priceOtherProductController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool editingOther = widget.otherToEdit != null;
     final CustomColors customColors =

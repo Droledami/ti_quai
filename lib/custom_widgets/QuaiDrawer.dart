@@ -40,11 +40,15 @@ class QuaiDrawer extends StatelessWidget {
             ),
             ListTile(
               title: const Text("Accueil"),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, "/home");
+              },
             ),
             ListTile(
               title: const Text("Gestion d'articles"),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, "/articles");
+              },
             ),
           ],
         ),

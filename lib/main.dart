@@ -1,14 +1,10 @@
-import 'dart:ui';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
-import 'package:ti_quai/enums/PaymentMethod.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import 'package:ti_quai/models/CustomerOrder.dart';
-import 'package:ti_quai/models/OrderElement.dart';
 import './theme.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
@@ -25,47 +21,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // FirestoreService firestoreService = FirestoreService();
-  //
-  // try {
-  //   var oeList = List<OrderElement>.empty(growable: true);
-  //   OrderElement oe = OrderElement(
-  //       article: Article.menu(
-  //           alpha: "B",
-  //           number: 3,
-  //           subAlpha: "y",
-  //           name: "En selle Marcel",
-  //           price: 12),
-  //       quantity: 3);
-  //   oe.promotion = Promotion(
-  //       discountValue: 3, nameLong: "Stampit Fidélité", nameShort: "Stampit");
-  //   oe.hasPromotion = true;
-  //   oe.comment = "Sauce BBQ";
-  //   oe.commentIsExtra = true;
-  //   oe.extraPrice = 5;
-  //
-  //   OrderElement oe2 = OrderElement(
-  //       article: Article.other(
-  //           name: "Le beau bic",
-  //           price: 3),
-  //       quantity: 2);
-  //   oe2.promotion = null;
-  //   oe2.hasPromotion = false;
-  //   oe2.comment = "";
-  //   oe2.commentIsExtra = false;
-  //   oe2.extraPrice = 0;
-  //
-  //   oeList.add(oe2);
-  //   oeList.add(oe);
-  //   firestoreService.updateOrder(CustomerOrder(
-  //       id: "9RtXjsNAktg1ghWa9zGV",
-  //       date: DateTime.now(),
-  //       orderElements: oeList,
-  //       paymentMethod: PaymentMethod.cash, tableNumber: 2));
-  // } catch (e) {
-  //   print(e);
-  // }
 
   runApp(const App());
 }
@@ -107,6 +62,7 @@ class App extends StatelessWidget {
         routes: {
           "/home": (context) => Homescreen(),
           "/order": (context) => EditOrAddOrderScreen(),
+          "/articles": (context) => ArticleSearchPage(),
         },
       ),
     );
@@ -147,8 +103,8 @@ class _HomescreenState extends State<Homescreen> {
         ),
         drawer: const QuaiDrawer(),
         floatingActionButton: FloatingActionButton(
-          onPressed: ()  {
-             Navigator.pushNamed(context, "/order",
+          onPressed: () {
+            Navigator.pushNamed(context, "/order",
                 arguments: EditOrAddScreenArguments(
                     orderId: EditOrAddScreenArguments.keyDefinedLater,
                     isEditMode: true));
@@ -227,7 +183,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
     return Container(
       decoration: BeachGradientDecoration(),
       child: PopScope(
-        onPopInvoked: (didPop){
+        onPopInvoked: (didPop) {
           _orderBloc.add(LoadOrder());
         },
         child: Scaffold(
@@ -239,25 +195,31 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
             centerTitle: true,
             title: TitleHeader(
               customColors: customColors,
-              title: "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater? "Modifier" : "Ajouter"} une commande",
+              title:
+                  "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater ? "Modifier" : "Ajouter"} une commande",
             ),
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              if(order.tableNumber <=0){
-                SnackBar errorNbTable = SnackBar(content: Text("Erreur! Numéro de table incorrect."));
+              if (order.tableNumber <= 0) {
+                SnackBar errorNbTable = SnackBar(
+                    content: Text("Erreur! Numéro de table incorrect."));
                 ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
                 return;
               }
-              if(order.orderElements.isEmpty){
-                SnackBar errorNoOrderElements = SnackBar(content: Text("Erreur! Ajoutez au moins un élément avant de valider la commande."));
-                ScaffoldMessenger.of(context).showSnackBar(errorNoOrderElements);
+              if (order.orderElements.isEmpty) {
+                SnackBar errorNoOrderElements = SnackBar(
+                    content: Text(
+                        "Erreur! Ajoutez au moins un élément avant de valider la commande."));
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(errorNoOrderElements);
                 return;
               }
-              if(args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater){
+              if (args.isEditMode &&
+                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
                 _orderBloc.add(UpdateOrder(order));
-              }else{
+              } else {
                 _orderBloc.add(AddOrder(order));
               }
               Navigator.pop(context);
@@ -305,6 +267,43 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               return Container();
             }
           }),
+        ),
+      ),
+    );
+  }
+}
+
+class ArticleSearchPage extends StatefulWidget {
+  const ArticleSearchPage({super.key});
+
+  @override
+  State<ArticleSearchPage> createState() => _ArticleSearchPageState();
+}
+
+class _ArticleSearchPageState extends State<ArticleSearchPage> {
+  @override
+  Widget build(BuildContext context) {
+    CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Container(
+      decoration: BeachGradientDecoration(),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          //leading: BackButton(), TODO: le mettre ici aussi une fois qu'il est fait
+          centerTitle: true,
+          title: TitleHeader(
+            customColors: customColors,
+            title: "Gestion d'articles",
+          ),
+          backgroundColor: Colors.white.withOpacity(0.0),
+        ),
+        drawer: QuaiDrawer(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            print("Add article");
+          },
         ),
       ),
     );
