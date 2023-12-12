@@ -147,8 +147,8 @@ class _HomescreenState extends State<Homescreen> {
         ),
         drawer: const QuaiDrawer(),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.pushNamed(context, "/order",
+          onPressed: ()  {
+             Navigator.pushNamed(context, "/order",
                 arguments: EditOrAddScreenArguments(
                     orderId: EditOrAddScreenArguments.keyDefinedLater,
                     isEditMode: true));
@@ -226,81 +226,86 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
         Theme.of(context).extension<CustomColors>()!;
     return Container(
       decoration: BeachGradientDecoration(),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        //Allows parent container's bg to display
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          //leading: BackButton(), TODO:ceci
-          centerTitle: true,
-          title: TitleHeader(
-            customColors: customColors,
-            title: "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater? "Modifier" : "Ajouter"} une commande",
+      child: PopScope(
+        onPopInvoked: (didPop){
+          _orderBloc.add(LoadOrder());
+        },
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          //Allows parent container's bg to display
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            //leading: BackButton(), TODO:ceci
+            centerTitle: true,
+            title: TitleHeader(
+              customColors: customColors,
+              title: "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater? "Modifier" : "Ajouter"} une commande",
+            ),
+            backgroundColor: Colors.white.withOpacity(0.0),
           ),
-          backgroundColor: Colors.white.withOpacity(0.0),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            if(order.tableNumber <=0){
-              SnackBar errorNbTable = SnackBar(content: Text("Erreur! Numéro de table incorrect."));
-              ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
-              return;
-            }
-            if(order.orderElements.isEmpty){
-              SnackBar errorNoOrderElements = SnackBar(content: Text("Erreur! Ajoutez au moins un élément avant de valider la commande."));
-              ScaffoldMessenger.of(context).showSnackBar(errorNoOrderElements);
-              return;
-            }
-            if(args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater){
-              _orderBloc.add(UpdateOrder(order));
-            }else{
-              _orderBloc.add(AddOrder(order));
-            }
-            Navigator.pop(context);
-          },
-          backgroundColor: customColors.secondary!,
-          child: const Icon(
-            Icons.check_outlined,
-            size: 40,
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              if(order.tableNumber <=0){
+                SnackBar errorNbTable = SnackBar(content: Text("Erreur! Numéro de table incorrect."));
+                ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
+                return;
+              }
+              if(order.orderElements.isEmpty){
+                SnackBar errorNoOrderElements = SnackBar(content: Text("Erreur! Ajoutez au moins un élément avant de valider la commande."));
+                ScaffoldMessenger.of(context).showSnackBar(errorNoOrderElements);
+                return;
+              }
+              if(args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater){
+                _orderBloc.add(UpdateOrder(order));
+              }else{
+                _orderBloc.add(AddOrder(order));
+              }
+              Navigator.pop(context);
+            },
+            backgroundColor: customColors.secondary!,
+            child: const Icon(
+              Icons.check_outlined,
+              size: 40,
+            ),
           ),
-        ),
-        body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
-          if (state is OrderLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (state is OrderLoaded) {
-            if (args.isEditMode &&
-                args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
-              order = state.getOrder(args.orderId);
+          body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
+            if (state is OrderLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (state is OrderLoaded) {
+              if (args.isEditMode &&
+                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+                order = state.getOrder(args.orderId);
+              } else {
+                order = CustomerOrder.createNew();
+              }
+              return Column(
+                children: [
+                  const SizedBox(
+                    height: 65,
+                  ),
+                  Expanded(
+                    flex: 7,
+                    child: SingleChildScrollView(
+                        child: OrderToEditOrAdd(
+                      order: order,
+                      isEditMode: args.isEditMode,
+                    )),
+                  ),
+                  Expanded(flex: 1, child: SizedBox()),
+                ],
+              );
+            } else if (state is OrderOperationSuccess) {
+              return Container();
+            } else if (state is OrderError) {
+              print(state.errorMessage);
+              return Container();
             } else {
-              order = CustomerOrder.createNew();
+              return Container();
             }
-            return Column(
-              children: [
-                const SizedBox(
-                  height: 65,
-                ),
-                Expanded(
-                  flex: 7,
-                  child: SingleChildScrollView(
-                      child: OrderToEditOrAdd(
-                    order: order,
-                    isEditMode: args.isEditMode,
-                  )),
-                ),
-                Expanded(flex: 1, child: SizedBox()),
-              ],
-            );
-          } else if (state is OrderOperationSuccess) {
-            return Container();
-          } else if (state is OrderError) {
-            print(state.errorMessage);
-            return Container();
-          } else {
-            return Container();
-          }
-        }),
+          }),
+        ),
       ),
     );
   }
