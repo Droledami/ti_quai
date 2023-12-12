@@ -62,8 +62,8 @@ double? forcePriceFormat(TextEditingController textEditingController,
             baseOffset: content.length - 1,
             extentOffset: content.length - 1));
     content = content.replaceFirst(",",
-        "."); //To be able to parse into double because decimals are made with commas in french
-    if(mustBeNegative){
+        ".");//To be able to parse into double because decimals are made with commas in french
+    if(mustBeNegative){//remove the minus here
       result = double.parse(content.substring(1, content.length -1));
     }else{
       result =

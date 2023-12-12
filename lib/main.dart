@@ -235,15 +235,20 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
           centerTitle: true,
           title: TitleHeader(
             customColors: customColors,
-            title: "${args.isEditMode ? "Modifier" : "Ajouter"} une commande",
+            title: "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater? "Modifier" : "Ajouter"} une commande",
           ),
           backgroundColor: Colors.white.withOpacity(0.0),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             if(order.tableNumber <=0){
-              SnackBar errorNbTable = SnackBar(content: Text("Erreur! numéro de table incorrect"));
+              SnackBar errorNbTable = SnackBar(content: Text("Erreur! Numéro de table incorrect."));
               ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
+              return;
+            }
+            if(order.orderElements.isEmpty){
+              SnackBar errorNoOrderElements = SnackBar(content: Text("Erreur! Ajoutez au moins un élément avant de valider la commande."));
+              ScaffoldMessenger.of(context).showSnackBar(errorNoOrderElements);
               return;
             }
             if(args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater){

@@ -66,7 +66,7 @@ class OrderHeader extends StatelessWidget {
                             if(value != null && RegExp(r"^[1-9][0-9]?$").hasMatch(value)){
                               return null;
                             }else{
-                              return "N° table incorrect";
+                              return "Erreur N°";
                             }
                           },
                           textEditingController: textEditingController!,

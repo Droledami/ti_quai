@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
 import 'package:ti_quai/enums/EntryType.dart';
@@ -38,6 +37,10 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   bool addingPromotion = false;
   bool addingOther = false;
 
+  bool editingOther = false;
+  OrderElement? otherToEdit;
+  UniqueKey? uuidOfOtherToEdit;
+
   bool editingOrderElement = false;
   OrderElement? orderElementInEdition;
   int indexOfOrderElementToEdit = -1;
@@ -67,6 +70,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                 extentOffset: previousValue.length));
       } else {
         _tableNumberController.text = "";
+
       }
     });
   }
@@ -196,37 +200,81 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
               }
             }),
             Column(
-              //TODO: crud pour les autres types d'articles
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextDivider(text: "Autres", color: customColors.tertiary!),
                 Column(
-                    children: widget.order.orderElements.map((orderElement) {
-                  if (orderElement.articleType == ArticleType.other) {
-                    return OthersOrderLineElement(
-                      productName: orderElement.articleName,
-                      productPrice: orderElement.articlePrice,
-                      quantity: orderElement.quantity,
+                    children:
+                        widget.order.orderElements.map((otherOrderElement) {
+                  if (otherOrderElement.articleType == ArticleType.other) {
+                    return GestureDetector(
+                      onLongPress: () {
+                        otherToEdit = otherOrderElement;
+                        uuidOfOtherToEdit = otherOrderElement.uuid;
+                        setState(() {
+                          addingOther = false;
+                          editingOther = true;
+                        });
+                      },
+                      child: Dismissible(
+                        key: UniqueKey(),
+                        background: DismissibleBackground(),
+                        onDismissed: (dismissDirection) {
+                          widget.order.orderElements = widget
+                              .order.orderElements
+                              .where((element) =>
+                                  element.uuid != otherOrderElement.uuid)
+                              .toList();
+                          setState(() {});
+                        },
+                        child: OthersOrderLineElement(
+                          productName: otherOrderElement.articleName,
+                          productPrice: otherOrderElement.articlePrice,
+                          quantity: otherOrderElement.quantity,
+                        ),
+                      ),
                     );
                   } else {
                     return SizedBox.shrink();
                   }
                 }).toList()),
                 Builder(builder: (context) {
-                  if (addingOther) {
+                  if (addingOther && !editingOther) {
                     return AddOrEditOtherForm(
                       onConfirmAdd: (otherOrderElement) {
                         setState(() {
                           widget.order.orderElements.add(otherOrderElement);
                           addingOther = false;
+                          editingOther = false;
                         });
                       },
                       onCancel: () {
                         setState(() {
                           addingOther = false;
+                          editingOther = false;
                         });
                       },
+                    );
+                  } else if (!addingOther && editingOther) {
+                    return AddOrEditOtherForm(
+                      onConfirmAdd: (otherOrderElement) {
+                        setState(() {
+                          OrderElement? oe = widget.order
+                              .getOrderElementByUuid(uuidOfOtherToEdit!);
+                          oe?.article = otherOrderElement.article;
+                          oe?.quantity = otherOrderElement.quantity;
+                          addingOther = false;
+                          editingOther = false;
+                        });
+                      },
+                      onCancel: () {
+                        setState(() {
+                          addingOther = false;
+                          editingOther = false;
+                        });
+                      },
+                      otherToEdit: otherToEdit,
                     );
                   } else {
                     return SizedIconButton(
@@ -447,6 +495,11 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
   void initState() {
     if (widget.otherToEdit != null) {
       otherOrderElement = widget.otherToEdit!.copy();
+
+      _otherProductNameController.text = otherOrderElement.articleName;
+      _priceOtherProductController.text = "${otherOrderElement.articlePrice}€";
+      _quantityOtherProductController.text =
+          otherOrderElement.quantity.toString();
     }
 
     _otherProductNameController.addListener(() {
@@ -461,8 +514,9 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
     });
 
     _priceOtherProductController.addListener(() {
-      double? price = forcePriceFormat(_priceOtherProductController, firstDigitCanBeZero: false, mustBeNegative: false);
-      if(price != null) otherOrderElement.article.price = price;
+      double? price = forcePriceFormat(_priceOtherProductController,
+          firstDigitCanBeZero: false, mustBeNegative: false);
+      if (price != null) otherOrderElement.article.price = price;
     });
 
     super.initState();
@@ -491,13 +545,13 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                 Row(
                   children: [
                     EntryBox(
-                      validator: (value){
-                        if(value != null && value.isNotEmpty){
-                          return null;
-                        }else{
-                          return "Veuillez donner le nom du produit";
-                        }
-                      },
+                        validator: (value) {
+                          if (value != null && value.isNotEmpty) {
+                            return null;
+                          } else {
+                            return "Veuillez donner le nom du produit";
+                          }
+                        },
                         orderEntryType: OrderEntry.text,
                         maxLength: 150,
                         placeholder: "Nom du produit...",
@@ -508,10 +562,12 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                 Row(
                   children: [
                     EntryBox(
-                      validator: (value){
-                        if(value != null && value.isNotEmpty && RegExp(r"^[1-9][0-9]*$").hasMatch(value)){
+                      validator: (value) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            RegExp(r"^[1-9][0-9]*$").hasMatch(value)) {
                           return null;
-                        }else{
+                        } else {
                           return "Erreur Quantité";
                         }
                       },
@@ -522,10 +578,13 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                       marginLeft: 10,
                     ),
                     EntryBox(
-                      validator: (value){
-                        if(value != null && value.isNotEmpty && RegExp(r"^[1-9][0-9]*[,.]?[0-9]{0,2}€?$").hasMatch(value)){
+                      validator: (value) {
+                        if (value != null &&
+                            value.isNotEmpty &&
+                            RegExp(r"^[1-9][0-9]*[,.]?[0-9]{0,2}€?$")
+                                .hasMatch(value)) {
                           return null;
-                        }else{
+                        } else {
                           return "Erreur Prix";
                         }
                       },
@@ -642,7 +701,8 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
     });
 
     _extraPriceController.addListener(() {
-      forcePriceFormat(_extraPriceController, firstDigitCanBeZero: true, mustBeNegative: false);
+      forcePriceFormat(_extraPriceController,
+          firstDigitCanBeZero: true, mustBeNegative: false);
     });
   }
 
@@ -874,10 +934,12 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                   .validate()) {
                                 orderElement.comment = _commentController.text;
                                 if (addingExtra) {
-                                  double extraPrice = forcePriceFormat(_extraPriceController, firstDigitCanBeZero: true, mustBeNegative: false)!;
+                                  double extraPrice = forcePriceFormat(
+                                      _extraPriceController,
+                                      firstDigitCanBeZero: true,
+                                      mustBeNegative: false)!;
                                   orderElement.commentIsExtra = true;
-                                  orderElement.extraPrice =
-                                      extraPrice;
+                                  orderElement.extraPrice = extraPrice;
                                 } else {
                                   _extraPriceController.text = "";
                                   orderElement.commentIsExtra = false;
@@ -963,8 +1025,9 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
     });
 
     _discountValueController.addListener(() {
-      double? discountValue = forcePriceFormat(_discountValueController, firstDigitCanBeZero: true, mustBeNegative: true);
-      if(discountValue !=null) promotion.discountValue = discountValue;
+      double? discountValue = forcePriceFormat(_discountValueController,
+          firstDigitCanBeZero: true, mustBeNegative: true);
+      if (discountValue != null) promotion.discountValue = discountValue;
     });
 
     //Forces case specific format like A followed by any number with the optionnal subalpha (ex: A326b or Z78)
@@ -1057,7 +1120,8 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                     EntryBox(
                       validator: (value) {
                         if (value != null &&
-                            RegExp(r"^-[0-9]+[,.]?[0-9]{0,2}?€$").hasMatch(value)) {
+                            RegExp(r"^-[0-9]+[,.]?[0-9]{0,2}?€$")
+                                .hasMatch(value)) {
                           return null;
                         } else {
                           return "Erreur réduction";
