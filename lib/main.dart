@@ -324,7 +324,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(flex: 1,child: SizedBox.shrink()),
+              Flexible(flex: 2,child: SizedBox.shrink()),
               SearchArticleForm(
                 searchContent: searchContent,
                 onSearchChanged: (newSearchContent){
@@ -334,28 +334,37 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                   //TODO: manage list of article returned from the form
                 },
               ),
-              BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
-                if(state is ArticleLoading){
-                  return CircularProgressIndicator();
-                }else if (state is ArticleLoaded){
-                  if(searchContent.isEmpty()){
-                    articlesSearch = state.articles;
-                  }else{
-                    articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
-                  }
-                  return Column(
-                    children: articlesSearch.map((e) => Text(e.name)).toList(),
-                  );
-                }else if (state is ArticleError){
-                  return Text(state.errorMessage);
-                }else if (state is ArticleOperationSuccess){
-                  _articleBloc.add(LoadArticle());
-                  return Container();
-                }else{
-                  return Container();
-                }
-              }),
-              Flexible(flex: 1,child: SizedBox.shrink()),
+              SizedBox(height: MediaQuery.of(context).size.height * 0.01,),
+              Flexible(
+                flex: 6,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: customColors.cardQuarterTransparency!,
+                    borderRadius: BorderRadius.circular(15)
+                  ),
+                  child: BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
+                    if(state is ArticleLoading){
+                      return CircularProgressIndicator();
+                    }else if (state is ArticleLoaded){
+                      if(searchContent.isEmpty()){
+                        articlesSearch = state.articles;
+                      }else{
+                        articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
+                      }
+                      return Column(
+                        children: articlesSearch.map((e) => Text(e.name)).toList(),
+                      );
+                    }else if (state is ArticleError){
+                      return Text(state.errorMessage);
+                    }else if (state is ArticleOperationSuccess){
+                      _articleBloc.add(LoadArticle());
+                      return Container();
+                    }else{
+                      return Container();
+                    }
+                  }),
+                ),
+              ),
             ],
           ),
         ),

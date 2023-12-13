@@ -43,7 +43,7 @@ class ArticleLoaded extends ArticleState {
     return articles.where((article) {
       bool alphaTest = searchContent.alpha.isEmpty? true : article.alpha.toLowerCase() == searchContent.alpha.toLowerCase();
       bool numberTest = searchNumber != null ? article.number == searchNumber : true;
-      bool subAlphaTest = searchContent.alpha.isEmpty? true : article.subAlpha == searchContent.subAlpha;
+      bool subAlphaTest = searchContent.subAlpha.isEmpty? true : article.subAlpha == searchContent.subAlpha;
       bool nameTest = article.name.toLowerCase().contains(searchContent.name.toLowerCase());
 
       return alphaTest && numberTest && subAlphaTest && nameTest;
