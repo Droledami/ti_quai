@@ -175,7 +175,7 @@ class FirestoreService {
             number: data[Article.keyNumber],
             subAlpha: data[Article.keySubAlpha],
             name: data[Article.keyName],
-            price: data[Article.keyPrice]);
+            price: (data[Article.keyPrice] as num).toDouble());
 
         return fetchedArticle;
       }).toList();

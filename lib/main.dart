@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
+import 'package:ti_quai/custom_widgets/EntryBox.dart';
+import 'package:ti_quai/enums/EntryType.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import 'package:ti_quai/models/CustomerOrder.dart';
+import 'package:ti_quai/models/SearchContent.dart';
 import './theme.dart';
+import 'blocs/article/article_bloc.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
 import 'blocs/order/order_states.dart';
@@ -15,6 +19,7 @@ import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/TitleHeader.dart';
 import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
+import 'models/Article.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,13 +35,15 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fireStoreService = FirestoreService();
     return MultiBlocProvider(
       providers: [
         BlocProvider<OrderBloc>(
-            create: (context) => OrderBloc(FirestoreService())),
+            create: (context) => OrderBloc(fireStoreService)),
         BlocProvider<SelectedOrderBloc>(
           create: (context) => SelectedOrderBloc(),
-        )
+        ),
+        BlocProvider<ArticleBloc>(create: (context) => ArticleBloc(fireStoreService)),
       ],
       child: MaterialApp(
         theme: ThemeData.light().copyWith(extensions: <ThemeExtension<dynamic>>[
@@ -281,10 +288,13 @@ class ArticleSearchPage extends StatefulWidget {
 }
 
 class _ArticleSearchPageState extends State<ArticleSearchPage> {
+  SearchContent searchContent = SearchContent.empty();
+
   @override
   Widget build(BuildContext context) {
     CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
+    final _articleBloc = BlocProvider.of<ArticleBloc>(context);
     return Container(
       decoration: BeachGradientDecoration(),
       child: Scaffold(
@@ -300,6 +310,23 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
           backgroundColor: Colors.white.withOpacity(0.0),
         ),
         drawer: QuaiDrawer(),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(flex: 1,child: SizedBox.shrink()),
+              SearchArticleForm(
+                searchContent: searchContent,
+                onSearchChanged: (newSearchContent){
+                  searchContent = newSearchContent;
+                  print(searchContent.toString());
+                  //TODO: manage list of article returned from the form
+                },
+              ),
+              Flexible(flex: 1,child: SizedBox.shrink()),
+            ],
+          ),
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             print("Add article");
@@ -309,3 +336,115 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
     );
   }
 }
+
+class SearchArticleForm extends StatefulWidget {
+  const SearchArticleForm({super.key, required this.onSearchChanged, required this.searchContent});
+
+
+  final Function(SearchContent) onSearchChanged;
+  final SearchContent searchContent;
+  @override
+  State<SearchArticleForm> createState() => _SearchArticleFormState();
+}
+
+class _SearchArticleFormState extends State<SearchArticleForm> {
+
+  TextEditingController _nameSearchController = TextEditingController();
+  TextEditingController _alphaSearchController = TextEditingController();
+  TextEditingController _numberSearchController = TextEditingController();
+  TextEditingController _subAlphaSearchController = TextEditingController();
+
+  @override
+  void initState() {
+    _nameSearchController.addListener(() {
+      widget.searchContent.name = _nameSearchController.text;
+      print(widget.searchContent.toString());
+      widget.onSearchChanged(widget.searchContent);
+    });
+    _alphaSearchController.addListener(() {
+      String alpha = _alphaSearchController.text.toUpperCase();
+      if(RegExp(r"^[A-Za-z]?$").hasMatch(alpha)){
+        _alphaSearchController.value = _alphaSearchController.value.copyWith(text: alpha);
+        widget.searchContent.alpha = alpha;
+        widget.onSearchChanged(widget.searchContent);
+      }else{
+        _alphaSearchController.text = "";
+        widget.searchContent.alpha = "";
+      }
+    });
+    _numberSearchController.addListener(() {
+      String number = _numberSearchController.text;
+      if(RegExp(r"^[0-9]*$").hasMatch(number)){
+        widget.searchContent.number = number;
+        _numberSearchController.value = _numberSearchController.value.copyWith(
+          text: number, selection: TextSelection(baseOffset: number.length, extentOffset: number.length)
+        );
+        widget.onSearchChanged(widget.searchContent);
+      }else if (number.isNotEmpty){
+        String previousValue = number.substring(0, number.length-1);
+        _numberSearchController.value = _numberSearchController.value.copyWith(
+          text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length)
+        );
+      }
+    });
+    _subAlphaSearchController.addListener(() {
+      String subAlpha = _subAlphaSearchController.text.toLowerCase();
+      if(RegExp(r"^[A-Za-z]$").hasMatch(subAlpha)){
+        _subAlphaSearchController.value = _subAlphaSearchController.value.copyWith(text: subAlpha);
+        widget.searchContent.subAlpha = subAlpha;
+        widget.onSearchChanged(widget.searchContent);
+      }else{
+        _subAlphaSearchController.text = "";
+        widget.searchContent.subAlpha = "";
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _nameSearchController.dispose();
+    _alphaSearchController.dispose();
+    _numberSearchController.dispose();
+    _subAlphaSearchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final customColors = Theme.of(context).extension<CustomColors>()!;
+    return Padding(
+      padding: const EdgeInsets.only(left:10, right: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: customColors.cardQuarterTransparency!,
+          borderRadius: BorderRadius.circular(15)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text("Recherche d'articles", textAlign: TextAlign.center,),
+            Row(
+              children: [
+                EntryBox(orderEntryType: OrderEntry.text, maxLength: 50, placeholder: "Nom d'un article", textEditingController: _nameSearchController, marginRight: 10, marginLeft: 5,),
+              ],
+            ),
+            Row(
+              children: ["Alphabet","Numéro","Sous-alpha"].map((headerText){
+                return Expanded(child: Text(headerText,textAlign: TextAlign.center,));
+              }).toList(),
+            ),
+            Row(
+              children: [
+                EntryBox(orderEntryType: OrderEntry.alpha, maxLength: 1, placeholder: "A-Z", textEditingController: _alphaSearchController, marginLeft: 10,),
+                EntryBox(orderEntryType: OrderEntry.number, maxLength: 3, placeholder: "N°", textEditingController: _numberSearchController, marginLeft: 5, marginRight: 5,),
+                EntryBox(orderEntryType: OrderEntry.subAlpha, maxLength: 1, placeholder: "a-z", textEditingController: _subAlphaSearchController, marginRight: 10,)
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

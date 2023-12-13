@@ -44,6 +44,10 @@ class Article {
   ArticleType type;
   double price;
 
+  String get reference{
+    return "$alpha$number$subAlpha";
+  }
+
   Article copy(Article article){
     return Article._(
       alpha: article.alpha,

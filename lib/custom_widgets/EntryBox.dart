@@ -57,9 +57,6 @@ class EntryBox extends StatelessWidget {
                 color: customColors.cardQuarterTransparency,
                 borderRadius: BorderRadius.circular(7)),
             child: TextFormField(
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r"[0-9-€,.]"))
-              ],
               validator: validator,
               maxLines: lines,
               controller: textEditingController,
