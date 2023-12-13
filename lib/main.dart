@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ti_quai/blocs/article/article_events.dart';
+import 'package:ti_quai/blocs/article/article_states.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
 import 'package:ti_quai/custom_widgets/EntryBox.dart';
@@ -290,6 +292,14 @@ class ArticleSearchPage extends StatefulWidget {
 class _ArticleSearchPageState extends State<ArticleSearchPage> {
   SearchContent searchContent = SearchContent.empty();
 
+  late List<Article> articlesSearch;
+
+  @override
+  void initState() {
+    BlocProvider.of<ArticleBloc>(context).add(LoadArticle());
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     CustomColors customColors =
@@ -318,11 +328,33 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
               SearchArticleForm(
                 searchContent: searchContent,
                 onSearchChanged: (newSearchContent){
-                  searchContent = newSearchContent;
-                  print(searchContent.toString());
+                  setState(() {
+                    searchContent = newSearchContent;
+                  });
                   //TODO: manage list of article returned from the form
                 },
               ),
+              BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
+                if(state is ArticleLoading){
+                  return CircularProgressIndicator();
+                }else if (state is ArticleLoaded){
+                  if(searchContent.isEmpty()){
+                    articlesSearch = state.articles;
+                  }else{
+                    articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
+                  }
+                  return Column(
+                    children: articlesSearch.map((e) => Text(e.name)).toList(),
+                  );
+                }else if (state is ArticleError){
+                  return Text(state.errorMessage);
+                }else if (state is ArticleOperationSuccess){
+                  _articleBloc.add(LoadArticle());
+                  return Container();
+                }else{
+                  return Container();
+                }
+              }),
               Flexible(flex: 1,child: SizedBox.shrink()),
             ],
           ),
@@ -358,7 +390,6 @@ class _SearchArticleFormState extends State<SearchArticleForm> {
   void initState() {
     _nameSearchController.addListener(() {
       widget.searchContent.name = _nameSearchController.text;
-      print(widget.searchContent.toString());
       widget.onSearchChanged(widget.searchContent);
     });
     _alphaSearchController.addListener(() {
@@ -366,11 +397,11 @@ class _SearchArticleFormState extends State<SearchArticleForm> {
       if(RegExp(r"^[A-Za-z]?$").hasMatch(alpha)){
         _alphaSearchController.value = _alphaSearchController.value.copyWith(text: alpha);
         widget.searchContent.alpha = alpha;
-        widget.onSearchChanged(widget.searchContent);
       }else{
         _alphaSearchController.text = "";
         widget.searchContent.alpha = "";
       }
+      widget.onSearchChanged(widget.searchContent);
     });
     _numberSearchController.addListener(() {
       String number = _numberSearchController.text;
@@ -379,24 +410,24 @@ class _SearchArticleFormState extends State<SearchArticleForm> {
         _numberSearchController.value = _numberSearchController.value.copyWith(
           text: number, selection: TextSelection(baseOffset: number.length, extentOffset: number.length)
         );
-        widget.onSearchChanged(widget.searchContent);
       }else if (number.isNotEmpty){
         String previousValue = number.substring(0, number.length-1);
         _numberSearchController.value = _numberSearchController.value.copyWith(
           text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length)
         );
       }
+      widget.onSearchChanged(widget.searchContent);
     });
     _subAlphaSearchController.addListener(() {
       String subAlpha = _subAlphaSearchController.text.toLowerCase();
       if(RegExp(r"^[A-Za-z]$").hasMatch(subAlpha)){
         _subAlphaSearchController.value = _subAlphaSearchController.value.copyWith(text: subAlpha);
         widget.searchContent.subAlpha = subAlpha;
-        widget.onSearchChanged(widget.searchContent);
       }else{
         _subAlphaSearchController.text = "";
         widget.searchContent.subAlpha = "";
       }
+      widget.onSearchChanged(widget.searchContent);
     });
     super.initState();
   }
