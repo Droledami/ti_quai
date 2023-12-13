@@ -41,12 +41,17 @@ class QuaiDrawer extends StatelessWidget {
             ListTile(
               title: const Text("Accueil"),
               onTap: () {
+                //Pop twice because drawer being opened counts as being on the stack
+                Navigator.pop(context);
+                Navigator.pop(context);
                 Navigator.pushNamed(context, "/home");
               },
             ),
             ListTile(
               title: const Text("Gestion d'articles"),
               onTap: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
                 Navigator.pushNamed(context, "/articles");
               },
             ),

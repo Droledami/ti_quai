@@ -165,7 +165,7 @@ class FirestoreService {
       FirebaseFirestore.instance.collection("Article");
 
   Stream<List<Article>> getArticles() {
-    return _articleCollection.snapshots().map((snapshot) {
+    return _articleCollection.orderBy("alpha").orderBy("number").orderBy("subAlpha").snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 

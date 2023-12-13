@@ -76,7 +76,7 @@ class OrderHeader extends StatelessWidget {
                           marginTop: 7,
                           marginRight: 20,
                           textEditingController: textEditingController!,
-                          orderEntryType: OrderEntry.tableNumber,
+                          orderEntryType: QuaiEntry.tableNumber,
                           maxLength: 2,
                           placeholder: "n°",
                         );

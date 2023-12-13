@@ -14,6 +14,7 @@ class ArticleBloc extends Bloc<ArticleEvent, ArticleState>{
         final articles = await _firestoreService.getArticles().first;
         emit(ArticleLoaded(articles));
       }catch(e){
+        print(e);
         emit(ArticleError("Failed to load articles: $e"));
       }
     });

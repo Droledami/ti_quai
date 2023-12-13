@@ -8,32 +8,32 @@ String getHourAndMinuteString(DateTime date) {
   return time;
 }
 
-bool checkIfEntryIsValid(OrderEntry orderEntry, String entry){
+bool checkIfEntryIsValid(QuaiEntry orderEntry, String entry){
   switch(orderEntry){
-    case OrderEntry.tableNumber:
+    case QuaiEntry.tableNumber:
       return RegExp(r"^[0-9]{1,2}$").hasMatch(entry);
-    case OrderEntry.alpha:
+    case QuaiEntry.alpha:
       return RegExp(r"^[A-Z]$").hasMatch(entry);
-    case OrderEntry.number:
+    case QuaiEntry.number:
       return RegExp(r"^[0-9]{1,3}$").hasMatch(entry);
-    case OrderEntry.subAlpha:
+    case QuaiEntry.subAlpha:
       return RegExp(r"^[a-z]$").hasMatch(entry);
-    case OrderEntry.quantity:
+    case QuaiEntry.quantity:
       return RegExp(r"^[0-9]{1,2}$").hasMatch(entry);
-    case OrderEntry.price:
+    case QuaiEntry.price:
       return RegExp(r"^[0-9]+$").hasMatch(entry);
-    case OrderEntry.text:
+    case QuaiEntry.text:
       return true;
     default:
       return false;
   }
 }
 
-TextInputType orderEntryToInputType(OrderEntry orderEntry){
+TextInputType orderEntryToInputType(QuaiEntry orderEntry){
   switch(orderEntry){
-    case OrderEntry.tableNumber || OrderEntry.quantity || OrderEntry.number || OrderEntry.price:
+    case QuaiEntry.tableNumber || QuaiEntry.quantity || QuaiEntry.number || QuaiEntry.price:
       return TextInputType.number;
-    case OrderEntry.alpha || OrderEntry.subAlpha || OrderEntry.text:
+    case QuaiEntry.alpha || QuaiEntry.subAlpha || QuaiEntry.text:
       return TextInputType.text;
     default:
       print("Warning, OrderEntry to TextInputType conversion was not exhaustive");

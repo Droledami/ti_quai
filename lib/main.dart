@@ -15,9 +15,12 @@ import 'blocs/article/article_bloc.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
 import 'blocs/order/order_states.dart';
+import 'custom_widgets/ArticleListTile.dart';
 import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
+import 'custom_widgets/QuaiTextContainer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
+import 'custom_widgets/SearchArticleWindow.dart';
 import 'custom_widgets/TitleHeader.dart';
 import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
@@ -325,7 +328,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(flex: 2,child: SizedBox.shrink()),
-              SearchArticleForm(
+              SearchArticleWindow(
                 searchContent: searchContent,
                 onSearchChanged: (newSearchContent){
                   setState(() {
@@ -337,32 +340,35 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
               SizedBox(height: MediaQuery.of(context).size.height * 0.01,),
               Flexible(
                 flex: 6,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: customColors.cardQuarterTransparency!,
-                    borderRadius: BorderRadius.circular(15)
-                  ),
-                  child: BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
-                    if(state is ArticleLoading){
-                      return CircularProgressIndicator();
-                    }else if (state is ArticleLoaded){
-                      if(searchContent.isEmpty()){
-                        articlesSearch = state.articles;
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10, right: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: customColors.cardQuarterTransparency!,
+                      borderRadius: BorderRadius.circular(15)
+                    ),
+                    child: BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
+                      if(state is ArticleLoading){
+                        return CircularProgressIndicator();
+                      }else if (state is ArticleLoaded){
+                        if(searchContent.isEmpty()){
+                          articlesSearch = state.articles;
+                        }else{
+                          articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
+                        }
+                        return ListView.builder(padding: EdgeInsets.zero, itemCount: articlesSearch.length, itemBuilder: (context, index){
+                          return ArticleListTile(articleToDisplay: articlesSearch[index]);
+                        });
+                      }else if (state is ArticleError){
+                        return Text(state.errorMessage);
+                      }else if (state is ArticleOperationSuccess){
+                        _articleBloc.add(LoadArticle());
+                        return Container();
                       }else{
-                        articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
+                        return Container();
                       }
-                      return Column(
-                        children: articlesSearch.map((e) => Text(e.name)).toList(),
-                      );
-                    }else if (state is ArticleError){
-                      return Text(state.errorMessage);
-                    }else if (state is ArticleOperationSuccess){
-                      _articleBloc.add(LoadArticle());
-                      return Container();
-                    }else{
-                      return Container();
-                    }
-                  }),
+                    }),
+                  ),
                 ),
               ),
             ],
@@ -370,121 +376,16 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            print("Add article");
+            print("Navigate to add Article Page");
+            //TODO: Navigate to add article page
           },
+          backgroundColor: customColors.secondary!,
+          child: const Icon(
+            Icons.add,
+            size: 40,
+          ),
         ),
       ),
     );
   }
 }
-
-class SearchArticleForm extends StatefulWidget {
-  const SearchArticleForm({super.key, required this.onSearchChanged, required this.searchContent});
-
-
-  final Function(SearchContent) onSearchChanged;
-  final SearchContent searchContent;
-  @override
-  State<SearchArticleForm> createState() => _SearchArticleFormState();
-}
-
-class _SearchArticleFormState extends State<SearchArticleForm> {
-
-  TextEditingController _nameSearchController = TextEditingController();
-  TextEditingController _alphaSearchController = TextEditingController();
-  TextEditingController _numberSearchController = TextEditingController();
-  TextEditingController _subAlphaSearchController = TextEditingController();
-
-  @override
-  void initState() {
-    _nameSearchController.addListener(() {
-      widget.searchContent.name = _nameSearchController.text;
-      widget.onSearchChanged(widget.searchContent);
-    });
-    _alphaSearchController.addListener(() {
-      String alpha = _alphaSearchController.text.toUpperCase();
-      if(RegExp(r"^[A-Za-z]?$").hasMatch(alpha)){
-        _alphaSearchController.value = _alphaSearchController.value.copyWith(text: alpha);
-        widget.searchContent.alpha = alpha;
-      }else{
-        _alphaSearchController.text = "";
-        widget.searchContent.alpha = "";
-      }
-      widget.onSearchChanged(widget.searchContent);
-    });
-    _numberSearchController.addListener(() {
-      String number = _numberSearchController.text;
-      if(RegExp(r"^[0-9]*$").hasMatch(number)){
-        widget.searchContent.number = number;
-        _numberSearchController.value = _numberSearchController.value.copyWith(
-          text: number, selection: TextSelection(baseOffset: number.length, extentOffset: number.length)
-        );
-      }else if (number.isNotEmpty){
-        String previousValue = number.substring(0, number.length-1);
-        _numberSearchController.value = _numberSearchController.value.copyWith(
-          text: previousValue, selection: TextSelection(baseOffset: previousValue.length, extentOffset: previousValue.length)
-        );
-      }
-      widget.onSearchChanged(widget.searchContent);
-    });
-    _subAlphaSearchController.addListener(() {
-      String subAlpha = _subAlphaSearchController.text.toLowerCase();
-      if(RegExp(r"^[A-Za-z]$").hasMatch(subAlpha)){
-        _subAlphaSearchController.value = _subAlphaSearchController.value.copyWith(text: subAlpha);
-        widget.searchContent.subAlpha = subAlpha;
-      }else{
-        _subAlphaSearchController.text = "";
-        widget.searchContent.subAlpha = "";
-      }
-      widget.onSearchChanged(widget.searchContent);
-    });
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _nameSearchController.dispose();
-    _alphaSearchController.dispose();
-    _numberSearchController.dispose();
-    _subAlphaSearchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final customColors = Theme.of(context).extension<CustomColors>()!;
-    return Padding(
-      padding: const EdgeInsets.only(left:10, right: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: customColors.cardQuarterTransparency!,
-          borderRadius: BorderRadius.circular(15)
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text("Recherche d'articles", textAlign: TextAlign.center,),
-            Row(
-              children: [
-                EntryBox(orderEntryType: OrderEntry.text, maxLength: 50, placeholder: "Nom d'un article", textEditingController: _nameSearchController, marginRight: 10, marginLeft: 5,),
-              ],
-            ),
-            Row(
-              children: ["Alphabet","Numéro","Sous-alpha"].map((headerText){
-                return Expanded(child: Text(headerText,textAlign: TextAlign.center,));
-              }).toList(),
-            ),
-            Row(
-              children: [
-                EntryBox(orderEntryType: OrderEntry.alpha, maxLength: 1, placeholder: "A-Z", textEditingController: _alphaSearchController, marginLeft: 10,),
-                EntryBox(orderEntryType: OrderEntry.number, maxLength: 3, placeholder: "N°", textEditingController: _numberSearchController, marginLeft: 5, marginRight: 5,),
-                EntryBox(orderEntryType: OrderEntry.subAlpha, maxLength: 1, placeholder: "a-z", textEditingController: _subAlphaSearchController, marginRight: 10,)
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-

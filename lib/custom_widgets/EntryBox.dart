@@ -24,7 +24,7 @@ class EntryBox extends StatelessWidget {
       this.marginBottom = 6});
 
   final int maxLength;
-  final OrderEntry orderEntryType;
+  final QuaiEntry orderEntryType;
   final String placeholder;
 
   final int flex;

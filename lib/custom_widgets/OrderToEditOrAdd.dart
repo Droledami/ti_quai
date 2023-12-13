@@ -560,7 +560,7 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                             return "Veuillez donner le nom du produit";
                           }
                         },
-                        orderEntryType: OrderEntry.text,
+                        orderEntryType: QuaiEntry.text,
                         maxLength: 150,
                         placeholder: "Nom du produit...",
                         textEditingController: _otherProductNameController,
@@ -579,7 +579,7 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                           return "Erreur Quantité";
                         }
                       },
-                      orderEntryType: OrderEntry.quantity,
+                      orderEntryType: QuaiEntry.quantity,
                       maxLength: 2,
                       placeholder: "Quantité...",
                       textEditingController: _quantityOtherProductController,
@@ -596,7 +596,7 @@ class _AddOrEditOtherFormState extends State<AddOrEditOtherForm> {
                           return "Erreur Prix";
                         }
                       },
-                      orderEntryType: OrderEntry.price,
+                      orderEntryType: QuaiEntry.price,
                       maxLength: 10,
                       placeholder: "Prix du produit...",
                       textEditingController: _priceOtherProductController,
@@ -768,7 +768,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                           }
                         },
                         textEditingController: _quantityController,
-                        orderEntryType: OrderEntry.quantity,
+                        orderEntryType: QuaiEntry.quantity,
                         maxLength: 2,
                         placeholder: "Qté",
                         marginLeft: 10,
@@ -784,7 +784,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                           }
                         },
                         textEditingController: _alphaController,
-                        orderEntryType: OrderEntry.alpha,
+                        orderEntryType: QuaiEntry.alpha,
                         maxLength: 1,
                         placeholder: "A-Z",
                         marginLeft: 3,
@@ -800,7 +800,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                           }
                         },
                         textEditingController: _numberController,
-                        orderEntryType: OrderEntry.number,
+                        orderEntryType: QuaiEntry.number,
                         maxLength: 3,
                         placeholder: "N°",
                         marginLeft: 3,
@@ -816,7 +816,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                           }
                         },
                         textEditingController: _subAlphaController,
-                        orderEntryType: OrderEntry.subAlpha,
+                        orderEntryType: QuaiEntry.subAlpha,
                         maxLength: 1,
                         placeholder: "a-z",
                         marginLeft: 3,
@@ -886,7 +886,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                 return "Veuillez donner la description du ${addingExtra ? "Supplément" : "Commentaire"}";
                               }
                             },
-                            orderEntryType: OrderEntry.text,
+                            orderEntryType: QuaiEntry.text,
                             flex: 4,
                             maxLength: 150,
                             lines: addingExtra ? 1 : 2,
@@ -908,7 +908,7 @@ class _AddOrEditOrderElementFormState extends State<AddOrEditOrderElementForm> {
                                     return "Erreur sup.";
                                   }
                                 },
-                                orderEntryType: OrderEntry.price,
+                                orderEntryType: QuaiEntry.price,
                                 flex: 1,
                                 maxLength: 5,
                                 placeholder: "Prix",
@@ -1100,7 +1100,7 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                       return "Veuillez entrer le nom de la promotion";
                     }
                   },
-                  orderEntryType: OrderEntry.text,
+                  orderEntryType: QuaiEntry.text,
                   maxLength: 80,
                   placeholder: "Nom de la promotion...",
                   textEditingController: _promotionNameController,
@@ -1119,7 +1119,7 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                         }
                       },
                       flex: 4,
-                      orderEntryType: OrderEntry.text,
+                      orderEntryType: QuaiEntry.text,
                       maxLength: 5,
                       placeholder: "Article associé (ex:A2b)",
                       textEditingController: _linkedArticleController,
@@ -1136,7 +1136,7 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                         }
                       },
                       flex: 2,
-                      orderEntryType: OrderEntry.price,
+                      orderEntryType: QuaiEntry.price,
                       maxLength: 7,
                       placeholder: "-?€",
                       textEditingController: _discountValueController,
