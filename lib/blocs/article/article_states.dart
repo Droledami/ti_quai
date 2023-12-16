@@ -15,15 +15,6 @@ class ArticleLoaded extends ArticleState {
 
   ArticleLoaded(this.articles);
 
-  Article getArticleById(String articleId) {
-    for (Article article in articles) {
-      if (articleId == article.id) {
-        return article;
-      }
-    }
-    throw Exception("Couldn't find article with ID: $articleId");
-  }
-
   Article getArticleByReference(
       {required String alpha, required int number, String subAlpha = ""}) {
     for (Article article in articles) {
@@ -50,12 +41,6 @@ class ArticleLoaded extends ArticleState {
 
     }).toList(growable: false);
   }
-}
-
-class ArticleOperationSuccess extends ArticleState {
-  final String message;
-
-  ArticleOperationSuccess(this.message);
 }
 
 class ArticleError extends ArticleState {

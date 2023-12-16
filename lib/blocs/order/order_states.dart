@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../../models/CustomerOrder.dart';
 
 @immutable
-abstract class OrderState {}
+abstract class OrdersState {}
 
-class OrderInitial extends OrderState{}
+class OrderInitial extends OrdersState{}
 
-class OrderLoading extends OrderState{}
+class OrderLoading extends OrdersState{}
 
-class OrderLoaded extends OrderState{
+class OrderLoaded extends OrdersState{
   final List<CustomerOrder> orders;
 
   OrderLoaded(this.orders);
@@ -24,13 +24,13 @@ class OrderLoaded extends OrderState{
   }
 }
 
-class OrderOperationSuccess extends OrderState{
+class OrderOperationSuccess extends OrdersState{
   final String message;
 
   OrderOperationSuccess(this.message);
 }
 
-class OrderError extends OrderState{
+class OrderError extends OrdersState{
   final String errorMessage;
 
   OrderError(this.errorMessage);

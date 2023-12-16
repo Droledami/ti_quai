@@ -46,7 +46,8 @@ class CustomerOrder {
         totalDiscount += orderElement.promotion!.discountValue;
       }
     }
-    return totalPrice - totalDiscount;
+    totalPrice = totalPrice - totalDiscount; //As requested by the client, paying in cash earns a 10% discount
+    return paymentMethod == PaymentMethod.cash? totalPrice * 0.9 : totalPrice;
   }
 
   double get totalDiscount {

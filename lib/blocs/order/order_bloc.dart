@@ -4,11 +4,11 @@ import 'package:ti_quai/firestore/firestore_service.dart';
 import 'order_events.dart';
 import 'order_states.dart';
 
-class OrderBloc extends Bloc<OrderEvent, OrderState>{
+class OrdersBloc extends Bloc<OrdersEvent, OrdersState>{
   final FirestoreService _firestoreService;
 
-  OrderBloc(this._firestoreService) : super(OrderInitial()){
-    on<LoadOrder>((event, emit) async {
+  OrdersBloc(this._firestoreService) : super(OrderInitial()){
+    on<LoadOrders>((event, emit) async {
       try{
         emit(OrderLoading());
         final orders = await _firestoreService.getOrders().first;

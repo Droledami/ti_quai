@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ti_quai/enums/ArticleType.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
@@ -13,7 +15,7 @@ class FirestoreService {
       FirebaseFirestore.instance.collection("Order");
 
   Stream<List<CustomerOrder>> getOrders() {
-    return _orderCollection.snapshots().map((snapshot) {
+    return _orderCollection.orderBy("date").snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -50,7 +52,8 @@ class FirestoreService {
       orderElementToAdd.comment = oe[OrderElement.keyComment];
       if (oe[OrderElement.keyCommentIsExtra]) {
         orderElementToAdd.commentIsExtra = true;
-        orderElementToAdd.extraPrice = (oe[OrderElement.keyExtraPrice] as num).toDouble();
+        orderElementToAdd.extraPrice =
+            (oe[OrderElement.keyExtraPrice] as num).toDouble();
       }
     }
     return orderElementToAdd;
@@ -61,8 +64,9 @@ class FirestoreService {
     Promotion promotion;
     if (oe[OrderElement.keyHasPromotion]) {
       promotion = Promotion(
-        discountValue: (oe[OrderElement.keyPromotion]
-            [Promotion.keyDiscountValue]as num).toDouble(),
+        discountValue:
+            (oe[OrderElement.keyPromotion][Promotion.keyDiscountValue] as num)
+                .toDouble(),
         name: oe[OrderElement.keyPromotion][Promotion.keyName],
       );
       orderElementToAdd.hasPromotion = true;
@@ -82,13 +86,16 @@ class FirestoreService {
         fetchedArticle = Article.menu(
             alpha: oe[OrderElement.keyArticle][Article.keyAlpha] as String,
             number: oe[OrderElement.keyArticle][Article.keyNumber],
-            subAlpha: oe[OrderElement.keyArticle][Article.keySubAlpha] as String,
+            subAlpha:
+                oe[OrderElement.keyArticle][Article.keySubAlpha] as String,
             name: oe[OrderElement.keyArticle][Article.keyName] as String,
-            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num).toDouble());
+            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num)
+                .toDouble());
       case ArticleType.other:
         fetchedArticle = Article.other(
             name: oe[OrderElement.keyArticle][Article.keyName] as String,
-            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num).toDouble());
+            price: (oe[OrderElement.keyArticle][Article.keyPrice] as num)
+                .toDouble());
     }
 
     return fetchedArticle;
@@ -161,50 +168,20 @@ class FirestoreService {
   }
 
   //Article operations
-  final CollectionReference _articleCollection =
-      FirebaseFirestore.instance.collection("Article");
 
-  Stream<List<Article>> getArticles() {
-    return _articleCollection.orderBy("alpha").orderBy("number").orderBy("subAlpha").snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  //TODO: En cours de test
+  // StreamSubscription<QuerySnapshot<Object?>> getArticleByRef(
+  //     String alpha, int number, String subAlpha) {
+  //   return _articleCollection
+  //       .where(Article.keyAlpha, isEqualTo: alpha)
+  //       .where(Article.keyNumber, isEqualTo: number)
+  //       .where(Article.keySubAlpha, isEqualTo: subAlpha)
+  //       .snapshots()
+  //       .listen((event) {});
+  // }
+  //
+  // StreamSubscription<QuerySnapshot<Object?>> getArticleStream() {
+  //   return _articleCollection.snapshots().listen((event) {});
+  // }
 
-        Article fetchedArticle = Article.menu(
-            id: doc.id,
-            alpha: data[Article.keyAlpha],
-            number: data[Article.keyNumber],
-            subAlpha: data[Article.keySubAlpha],
-            name: data[Article.keyName],
-            price: (data[Article.keyPrice] as num).toDouble());
-
-        return fetchedArticle;
-      }).toList();
-    });
-  }
-
-  Future<void> addArticle(Article article) {
-    return _articleCollection.add({
-      Article.keyAlpha: article.alpha,
-      Article.keyNumber: article.number,
-      Article.keySubAlpha: article.subAlpha,
-      Article.keyName: article.name,
-      Article.keyType: article.type.name,
-      Article.keyPrice: article.price
-    });
-  }
-
-  Future<void> updateArticle(Article article) {
-    return _articleCollection.doc(article.id).update({
-      Article.keyAlpha: article.alpha,
-      Article.keyNumber: article.number,
-      Article.keySubAlpha: article.subAlpha,
-      Article.keyName: article.name,
-      Article.keyType: article.type.name,
-      Article.keyPrice: article.price
-    });
-  }
-
-  Future<void> deleteArticle(String articleId) {
-    return _articleCollection.doc(articleId).delete();
-  }
 }

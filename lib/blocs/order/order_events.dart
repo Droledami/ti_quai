@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 import '../../models/CustomerOrder.dart';
 
 @immutable
-abstract class OrderEvent{}
+abstract class OrdersEvent{}
 
-class LoadOrder extends OrderEvent{}
+class LoadOrders extends OrdersEvent{}
 
-class AddOrder extends OrderEvent{
+class AddOrder extends OrdersEvent{
   final CustomerOrder order;
 
   AddOrder(this.order);
 }
 
-class UpdateOrder extends OrderEvent{
+class UpdateOrder extends OrdersEvent{
   final CustomerOrder order;
 
   UpdateOrder(this.order);
 }
 
-class DeleteOrder extends OrderEvent{
+class DeleteOrder extends OrdersEvent{
   final CustomerOrder order;
 
   DeleteOrder(this.order);

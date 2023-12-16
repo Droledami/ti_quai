@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../enums/EntryType.dart';
-import '../functions/functions.dart';
+import '../processes/functions.dart';
 import '../theme.dart';
 
 class EntryBox extends StatelessWidget {

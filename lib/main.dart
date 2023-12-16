@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,8 +6,6 @@ import 'package:ti_quai/blocs/article/article_events.dart';
 import 'package:ti_quai/blocs/article/article_states.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
 import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
-import 'package:ti_quai/custom_widgets/EntryBox.dart';
-import 'package:ti_quai/enums/EntryType.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import 'package:ti_quai/models/CustomerOrder.dart';
 import 'package:ti_quai/models/SearchContent.dart';
@@ -18,7 +17,6 @@ import 'blocs/order/order_states.dart';
 import 'custom_widgets/ArticleListTile.dart';
 import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
-import 'custom_widgets/QuaiTextContainer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/SearchArticleWindow.dart';
 import 'custom_widgets/TitleHeader.dart';
@@ -26,11 +24,19 @@ import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
 
+//TODO: add end of day mode for the app
+//TODO: add tag to order to set it as paid.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  if(kIsWeb){
+    print("coucou du web");
+  }else{
+    print("JE SUIS SUR ANDROID PTN JE CRIE PARCE QUE Y A TROP DE LOGS ICI !!!");
+  }
 
   runApp(const App());
 }
@@ -43,14 +49,15 @@ class App extends StatelessWidget {
     final fireStoreService = FirestoreService();
     return MultiBlocProvider(
       providers: [
-        BlocProvider<OrderBloc>(
-            create: (context) => OrderBloc(fireStoreService)),
+        BlocProvider<OrdersBloc>(
+            create: (context) => OrdersBloc(fireStoreService)),
         BlocProvider<SelectedOrderBloc>(
           create: (context) => SelectedOrderBloc(),
         ),
-        BlocProvider<ArticleBloc>(create: (context) => ArticleBloc(fireStoreService)),
+        BlocProvider<ArticlesBloc>(create: (context) => ArticlesBloc()),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: ThemeData.light().copyWith(extensions: <ThemeExtension<dynamic>>[
           const CustomColors(
             primary: Color(0xFF7AE582),
@@ -89,13 +96,13 @@ class Homescreen extends StatefulWidget {
 class _HomescreenState extends State<Homescreen> {
   @override
   void initState() {
-    BlocProvider.of<OrderBloc>(context).add(LoadOrder());
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final OrderBloc _orderBloc = BlocProvider.of<OrderBloc>(context);
+    final OrdersBloc _orderBloc = BlocProvider.of<OrdersBloc>(context);
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Container(
@@ -127,7 +134,7 @@ class _HomescreenState extends State<Homescreen> {
             size: 40,
           ),
         ),
-        body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
+        body: BlocBuilder<OrdersBloc, OrdersState>(builder: (context, state) {
           if (state is OrderLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -147,7 +154,7 @@ class _HomescreenState extends State<Homescreen> {
               ],
             );
           } else if (state is OrderOperationSuccess) {
-            _orderBloc.add(LoadOrder());
+            _orderBloc.add(LoadOrders());
             return Container();
           } else if (state is OrderError) {
             return Text(state.errorMessage);
@@ -179,7 +186,11 @@ class EditOrAddOrderScreen extends StatefulWidget {
 class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
   @override
   void initState() {
-    BlocProvider.of<OrderBloc>(context).add(LoadOrder());
+    //Load articles in memory once.
+    if(BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded){
+      BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
+    }
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
     super.initState();
   }
 
@@ -189,14 +200,14 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)!.settings.arguments as EditOrAddScreenArguments;
-    final OrderBloc _orderBloc = BlocProvider.of<OrderBloc>(context);
+    final OrdersBloc _orderBloc = BlocProvider.of<OrdersBloc>(context);
     final CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
     return Container(
       decoration: BeachGradientDecoration(),
       child: PopScope(
         onPopInvoked: (didPop) {
-          _orderBloc.add(LoadOrder());
+          _orderBloc.add(LoadOrders());
         },
         child: Scaffold(
           extendBodyBehindAppBar: true,
@@ -242,7 +253,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               size: 40,
             ),
           ),
-          body: BlocBuilder<OrderBloc, OrderState>(builder: (context, state) {
+          body: BlocBuilder<OrdersBloc, OrdersState>(builder: (context, state) {
             if (state is OrderLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
@@ -299,7 +310,10 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
 
   @override
   void initState() {
-    BlocProvider.of<ArticleBloc>(context).add(LoadArticle());
+    //Load articles in memory once.
+    if(BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded){
+    BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
+    }
     super.initState();
   }
 
@@ -307,7 +321,6 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
   Widget build(BuildContext context) {
     CustomColors customColors =
         Theme.of(context).extension<CustomColors>()!;
-    final _articleBloc = BlocProvider.of<ArticleBloc>(context);
     return Container(
       decoration: BeachGradientDecoration(),
       child: Scaffold(
@@ -347,7 +360,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                       color: customColors.cardQuarterTransparency!,
                       borderRadius: BorderRadius.circular(15)
                     ),
-                    child: BlocBuilder<ArticleBloc, ArticleState>(builder: (context, state){
+                    child: BlocBuilder<ArticlesBloc, ArticleState>(builder: (context, state){
                       if(state is ArticleLoading){
                         return CircularProgressIndicator();
                       }else if (state is ArticleLoaded){
@@ -361,9 +374,6 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                         });
                       }else if (state is ArticleError){
                         return Text(state.errorMessage);
-                      }else if (state is ArticleOperationSuccess){
-                        _articleBloc.add(LoadArticle());
-                        return Container();
                       }else{
                         return Container();
                       }
