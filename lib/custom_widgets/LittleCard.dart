@@ -33,6 +33,7 @@ class LittleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (empty) {
       return Expanded(
+        flex: flex,
         // because of flex Expanded will take the same space as if there were something
         child: Padding(
           padding: EdgeInsets.only(left: leftMargin, right: rightMargin),

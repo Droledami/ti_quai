@@ -52,6 +52,8 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
   Promotion? promotionInEdition;
   String? articleRefOfPromotionInEdition;
 
+  int indexOfUnlinkedPromotionToEdit = -1;
+
   TextEditingController _tableNumberController = TextEditingController();
 
   @override
@@ -132,7 +134,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                         if (widget.order.orderElements[index].articleType ==
                             ArticleType.menu) {
                           return GestureDetector(
-                              onLongPress: () {
+                              onDoubleTap: () {
                                 orderElementInEdition =
                                     widget.order.orderElements[index];
                                 indexOfOrderElementToEdit = index;
@@ -225,7 +227,7 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                             widget.order.orderElements.map((otherOrderElement) {
                       if (otherOrderElement.articleType == ArticleType.other) {
                         return GestureDetector(
-                          onLongPress: () {
+                          onDoubleTap: () {
                             otherToEdit = otherOrderElement;
                             uuidOfOtherToEdit = otherOrderElement.uuid;
                             setState(() {
@@ -355,57 +357,39 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                       }
                     }),
                     Column(
-                      children: widget.order.orderElements.map((orderElement) {
-                        if (orderElement.hasPromotion &&
-                            orderElement.promotion != null) {
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onLongPress: () {
-                              if (promotionInEdition != null) return;
-                              setState(() {
-                                promotionInEdition = orderElement.promotion;
-                                articleRefOfPromotionInEdition =
-                                    orderElement.articleReference;
-                              });
-                            },
-                            child: PromotionLine(
-                              onDismissed: () {
-                                orderElement.deletePromotion();
+                      children:
+                          listLinkedPromotions(widget.order.orderElements),
+                    ),
+                    SizedBox(
+                      height: 27.0 * widget.order.unlinkedPromotions.length,
+                      child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: widget.order.unlinkedPromotions.length,
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onDoubleTap: () {
+                                if (promotionInEdition != null) return;
                                 setState(() {
-                                  promotionInEdition = null;
-                                  articleRefOfPromotionInEdition = null;
+                                  indexOfUnlinkedPromotionToEdit = index;
+                                  promotionInEdition = widget.order.unlinkedPromotions[index];
+                                  articleRefOfPromotionInEdition = "";
                                 });
                               },
-                              promotion: orderElement.promotion!,
-                              linkedArticle: orderElement.article,
-                              key: UniqueKey(),
-                            ),
-                          );
-                        } else if (orderElement.hasPromotion &&
-                            orderElement.promotion == null) {
-                          print(
-                              "Error, an order element's promotion has incorrectly set values : hasPromotion is true, yet promotion is null");
-                          return SizedBox();
-                        } else if (!orderElement.hasPromotion &&
-                            orderElement.promotion != null) {
-                          print(
-                              "Warning, an order element's promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
-                          return PromotionLine(
-                            onDismissed: () {
-                              orderElement.deletePromotion();
-                              setState(() {
-                                promotionInEdition = null;
-                                articleRefOfPromotionInEdition = null;
-                              });
-                            },
-                            promotion: orderElement.promotion!,
-                            linkedArticle: orderElement.article,
-                            key: UniqueKey(),
-                          );
-                        } else {
-                          return SizedBox();
-                        }
-                      }).toList(),
+                              child: PromotionLine(
+                                onDismissed: () {
+                                  widget.order.unlinkedPromotions.removeAt(index);
+                                  setState(() {
+                                    indexOfUnlinkedPromotionToEdit= -1;
+                                    promotionInEdition = null;
+                                    articleRefOfPromotionInEdition = null;
+                                  });
+                                },
+                                promotion: widget.order.unlinkedPromotions[index],
+                                key: UniqueKey(),
+                              ),
+                            );
+                          }),
                     ),
                   ],
                 ),
@@ -413,35 +397,43 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
                   if (addingPromotion) {
                     return AddOrEditPromotionForm(onCancel: () {
                       setState(() {
+                        indexOfUnlinkedPromotionToEdit= -1;
                         promotionInEdition = null;
                         addingPromotion = false;
                       });
                     }, onConfirmAdd: (promotion, articleRef) {
-                      setState(() {
-                        promotionInEdition = null;
-                        addingPromotion = false;
-                      });
                       OrderElement? orderElement =
                           widget.order.getOrderElementByRef(articleRef);
                       orderElement?.promotion = promotion;
                       orderElement?.hasPromotion = true;
+                      if (orderElement == null && articleRef.isEmpty) {
+                        widget.order.unlinkedPromotions.add(promotion);
+                      }
+                      setState(() {
+                        promotionInEdition = null;
+                        addingPromotion = false;
+                      });
                     });
                   } else if (promotionInEdition != null) {
                     return AddOrEditPromotionForm(
                       onCancel: () {
                         setState(() {
+                          indexOfUnlinkedPromotionToEdit=-1;
                           addingPromotion = false;
                           promotionInEdition = null;
                         });
                       },
                       onConfirmAdd: (promotion, articleRef) {
+                        OrderElement? orderElement =
+                            widget.order.getOrderElementByRef(articleRef);
+                        orderElement?.promotion = promotion;
+                        if(orderElement == null){
+                          widget.order.unlinkedPromotions[indexOfUnlinkedPromotionToEdit] = promotion;
+                        }
                         setState(() {
                           addingPromotion = false;
                           promotionInEdition = null;
                         });
-                        OrderElement? orderElement =
-                            widget.order.getOrderElementByRef(articleRef);
-                        orderElement?.promotion = promotion;
                       },
                       promotionToEdit: promotionInEdition,
                       articleRefOfPromotionToEdit:
@@ -485,8 +477,91 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
     );
   }
 
+  List<Widget> listLinkedPromotions(List<OrderElement> orderElements) {
+    return orderElements.map((orderElement) {
+      if (orderElement.hasPromotion && orderElement.promotion != null) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onDoubleTap: () {
+            if (promotionInEdition != null) return;
+            setState(() {
+              promotionInEdition = orderElement.promotion;
+              articleRefOfPromotionInEdition = orderElement.articleReference;
+            });
+          },
+          child: PromotionLine(
+            onDismissed: () {
+              orderElement.deletePromotion();
+              setState(() {
+                promotionInEdition = null;
+                articleRefOfPromotionInEdition = null;
+              });
+            },
+            promotion: orderElement.promotion!,
+            linkedArticle: orderElement.article,
+            key: UniqueKey(),
+          ),
+        );
+      } else if (orderElement.hasPromotion && orderElement.promotion == null) {
+        print(
+            "Error, an order element's promotion has incorrectly set values : hasPromotion is true, yet promotion is null");
+        return SizedBox();
+      } else if (!orderElement.hasPromotion && orderElement.promotion != null) {
+        print(
+            "Warning, an order element's promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
+        return PromotionLine(
+          onDismissed: () {
+            orderElement.deletePromotion();
+            setState(() {
+              promotionInEdition = null;
+              articleRefOfPromotionInEdition = null;
+            });
+          },
+          promotion: orderElement.promotion!,
+          linkedArticle: orderElement.article,
+          key: UniqueKey(),
+        );
+      } else {
+        return SizedBox();
+      }
+    }).toList();
+  }
+
+  //TODO: delete
+  Widget listUnlinkedPromotions(List<Promotion> promotions) {
+    return ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: promotions.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: () {
+              if (promotionInEdition != null) return;
+              setState(() {
+                promotionInEdition = promotions[index];
+                articleRefOfPromotionInEdition = "";
+              });
+            },
+            child: PromotionLine(
+              onDismissed: () {
+                promotions.removeAt(index);
+                setState(() {
+                  promotionInEdition = null;
+                  articleRefOfPromotionInEdition = null;
+                });
+              },
+              promotion: promotions[index],
+              key: UniqueKey(),
+            ),
+          );
+        });
+  }
+
   void setArticlePriceAndName(ArticleLoaded state, OrderElement orderElement) {
-    Article artData = state.getArticleByReference(alpha: orderElement.articleAlpha, number: orderElement.articleNumber, subAlpha: orderElement.articleSubAlpha);
+    Article artData = state.getArticleByReference(
+        alpha: orderElement.articleAlpha,
+        number: orderElement.articleNumber,
+        subAlpha: orderElement.articleSubAlpha);
     orderElement.article.price = artData.price;
     orderElement.article.name = artData.name;
   }
@@ -1139,15 +1214,15 @@ class _AddOrEditPromotionFormState extends State<AddOrEditPromotionForm> {
                 Row(
                   children: [
                     EntryBox(
-                      validator: (value) {
-                        if (value != null &&
-                            RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
-                                .hasMatch(value)) {
-                          return null;
-                        } else {
-                          return "Erreur référence";
-                        }
-                      },
+                      // validator: (value) {
+                      //   if (value != null &&
+                      //       RegExp(r"^[a-zA-Z][0-9]+[a-zA-Z]?$")
+                      //           .hasMatch(value)) {
+                      //     return null;
+                      //   } else {
+                      //     return "Erreur référence";
+                      //   }
+                      // },
                       flex: 4,
                       orderEntryType: QuaiEntry.text,
                       maxLength: 5,

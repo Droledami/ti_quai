@@ -85,7 +85,7 @@ class OrderSimple extends StatelessWidget {
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Text(
-                      "${order.totalPrice}€",
+                      "${order.totalPrice.toStringAsFixed(2)}€",
                       style: TextStyle(
                         height: 1,
                         fontSize: 24,

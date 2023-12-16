@@ -57,7 +57,7 @@ class GreatTotal extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         rightMargin: 5,
                         littleCardColor: customColors.special!,
-                        text: "$totalPrice€"),
+                        text: "${totalPrice.toStringAsFixed(2)}€"),
                   ],
                 ),
               ),

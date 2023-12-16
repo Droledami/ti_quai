@@ -11,13 +11,12 @@ import 'LittleCard.dart';
 class PromotionLine extends StatelessWidget {
   const PromotionLine(
       {required super.key,
-      required this.promotion,
-      required this.linkedArticle,
+      required this.promotion, this.linkedArticle,
       required this.onDismissed})
       : assert(key != null, "Key is required for PromotionLineLong for its dismiss feature");
 
   final Promotion promotion;
-  final Article linkedArticle;
+  final Article? linkedArticle;
 
   final Function onDismissed;
 
@@ -46,8 +45,9 @@ class PromotionLine extends StatelessWidget {
                 LittleCard(
                     littleCardColor: customColors.secondary!,
                     flex: 2,
-                    text:
-                        "${linkedArticle.alpha}${linkedArticle.number}${linkedArticle.subAlpha != "" ? linkedArticle.subAlpha : ""}"),
+                    empty: linkedArticle == null,
+                    text: linkedArticle != null ?
+                        "${linkedArticle!.alpha}${linkedArticle!.number}${linkedArticle!.subAlpha != "" ? linkedArticle!.subAlpha : ""}" : ""),
                 LittleCard(
                     littleCardColor: customColors.secondaryLight!,
                     flex: 4,

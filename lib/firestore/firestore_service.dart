@@ -15,7 +15,14 @@ class FirestoreService {
       FirebaseFirestore.instance.collection("Order");
 
   Stream<List<CustomerOrder>> getOrders() {
-    return _orderCollection.orderBy("date").snapshots().map((snapshot) {
+    //Only get orders of the last 24 hours
+    return _orderCollection
+        .orderBy("date")
+        .where("date",
+            isGreaterThan: Timestamp.fromDate(
+                DateTime.now().subtract(Duration(hours: 16))))
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
@@ -25,6 +32,16 @@ class FirestoreService {
           OrderElement orderElementToAdd = createOrderElementFromSnapshot(oe);
           orderElementList.add(orderElementToAdd);
         }
+
+        List<Promotion> unLinkedPromotionsList =
+            List<Promotion>.empty(growable: true);
+        for (var unlinkedProm in data[CustomerOrder.keyUnlinkedPromotions]) {
+          Promotion unlinedPromotionToAdd = Promotion(
+              discountValue: (unlinkedProm[Promotion.keyDiscountValue] as num).toDouble(),
+              name: unlinkedProm[Promotion.keyName]);
+          unLinkedPromotionsList.add(unlinedPromotionToAdd);
+        }
+
         return CustomerOrder(
             id: doc.id,
             tableNumber: (data[CustomerOrder.keyTableNumber] as num).toInt(),
@@ -33,7 +50,8 @@ class FirestoreService {
             paymentMethod: data[CustomerOrder.keyPaymentMethod] ==
                     PaymentMethod.bancontact.name
                 ? PaymentMethod.bancontact
-                : PaymentMethod.cash);
+                : PaymentMethod.cash,
+            unlinkedPromotions: unLinkedPromotionsList);
       }).toList();
     });
   }
@@ -110,12 +128,28 @@ class FirestoreService {
       oeMapList.add(oeMap);
     }
 
+    List<Map<String, dynamic>> promMapList = List<Map<String, dynamic>>.empty(growable: true);
+
+    for(Promotion prom in order.unlinkedPromotions){
+      Map<String, dynamic> promMap = convertPromotionToMap(prom);
+
+      promMapList.add(promMap);
+    }
+
     return _orderCollection.add({
       CustomerOrder.keyTableNumber: order.tableNumber,
       CustomerOrder.keyDate: order.date,
       CustomerOrder.keyOrderElements: oeMapList,
-      CustomerOrder.keyPaymentMethod: order.paymentMethod.name
+      CustomerOrder.keyPaymentMethod: order.paymentMethod.name,
+      CustomerOrder.keyUnlinkedPromotions: promMapList
     });
+  }
+
+  Map<String, dynamic> convertPromotionToMap(Promotion prom) {
+    Map<String, dynamic> promMap = <String, dynamic>{};
+    promMap[Promotion.keyName] = prom.name;
+    promMap[Promotion.keyDiscountValue] = prom.discountValue;
+    return promMap;
   }
 
   Map<String, dynamic> convertOrderElementToMaps(OrderElement oe) {
@@ -155,11 +189,20 @@ class FirestoreService {
       oeMapList.add(oeMap);
     }
 
+    List<Map<String, dynamic>> promMapList = List<Map<String, dynamic>>.empty(growable: true);
+
+    for(Promotion prom in order.unlinkedPromotions){
+      Map<String, dynamic> promMap = convertPromotionToMap(prom);
+
+      promMapList.add(promMap);
+    }
+
     return _orderCollection.doc(order.id).update({
       CustomerOrder.keyTableNumber: order.tableNumber,
       CustomerOrder.keyDate: order.date,
       CustomerOrder.keyOrderElements: oeMapList,
-      CustomerOrder.keyPaymentMethod: order.paymentMethod.name
+      CustomerOrder.keyPaymentMethod: order.paymentMethod.name,
+      CustomerOrder.keyUnlinkedPromotions: promMapList
     });
   }
 
@@ -167,21 +210,20 @@ class FirestoreService {
     return _orderCollection.doc(orderId).delete();
   }
 
-  //Article operations
+//Article operations
 
-  //TODO: En cours de test
-  // StreamSubscription<QuerySnapshot<Object?>> getArticleByRef(
-  //     String alpha, int number, String subAlpha) {
-  //   return _articleCollection
-  //       .where(Article.keyAlpha, isEqualTo: alpha)
-  //       .where(Article.keyNumber, isEqualTo: number)
-  //       .where(Article.keySubAlpha, isEqualTo: subAlpha)
-  //       .snapshots()
-  //       .listen((event) {});
-  // }
-  //
-  // StreamSubscription<QuerySnapshot<Object?>> getArticleStream() {
-  //   return _articleCollection.snapshots().listen((event) {});
-  // }
-
+//TODO: En cours de test
+// StreamSubscription<QuerySnapshot<Object?>> getArticleByRef(
+//     String alpha, int number, String subAlpha) {
+//   return _articleCollection
+//       .where(Article.keyAlpha, isEqualTo: alpha)
+//       .where(Article.keyNumber, isEqualTo: number)
+//       .where(Article.keySubAlpha, isEqualTo: subAlpha)
+//       .snapshots()
+//       .listen((event) {});
+// }
+//
+// StreamSubscription<QuerySnapshot<Object?>> getArticleStream() {
+//   return _articleCollection.snapshots().listen((event) {});
+// }
 }
