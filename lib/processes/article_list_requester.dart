@@ -1,3 +1,5 @@
+//ONLY FOR THE WEB VERSION
+
 import 'package:http/http.dart';
 import 'package:http/retry.dart';
 import 'dart:convert';

@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_router/shelf_router.dart' as shelf_router;
 import 'package:ti_quai/blocs/article/article_events.dart';
 import 'package:ti_quai/blocs/article/article_states.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
@@ -24,6 +29,10 @@ import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
 
+
+const articleRequest = "get_articles";
+const printOrderRequest = "print_order_request";
+
 //TODO: add end of day mode for the app
 //TODO: add tag to order to set it as paid.
 void main() async {
@@ -32,9 +41,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  if(kIsWeb){
+  if (kIsWeb) {
     print("coucou du web");
-  }else{
+  } else {
     print("JE SUIS SUR ANDROID PTN JE CRIE PARCE QUE Y A TROP DE LOGS ICI !!!");
   }
 
@@ -187,7 +196,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
   @override
   void initState() {
     //Load articles in memory once.
-    if(BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded){
+    if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
       BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
     BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
@@ -311,16 +320,15 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
   @override
   void initState() {
     //Load articles in memory once.
-    if(BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded){
-    BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
+    if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
+      BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    CustomColors customColors =
-        Theme.of(context).extension<CustomColors>()!;
+    CustomColors customColors = Theme.of(context).extension<CustomColors>()!;
     return Container(
       decoration: BeachGradientDecoration(),
       child: Scaffold(
@@ -340,41 +348,48 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(flex: 2,child: SizedBox.shrink()),
+              Flexible(flex: 2, child: SizedBox.shrink()),
               SearchArticleWindow(
                 searchContent: searchContent,
-                onSearchChanged: (newSearchContent){
+                onSearchChanged: (newSearchContent) {
                   setState(() {
                     searchContent = newSearchContent;
                   });
                   //TODO: manage list of article returned from the form
                 },
               ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.01,),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.01,
+              ),
               Flexible(
                 flex: 6,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10, right: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: customColors.cardQuarterTransparency!,
-                      borderRadius: BorderRadius.circular(15)
-                    ),
-                    child: BlocBuilder<ArticlesBloc, ArticleState>(builder: (context, state){
-                      if(state is ArticleLoading){
+                        color: customColors.cardQuarterTransparency!,
+                        borderRadius: BorderRadius.circular(15)),
+                    child: BlocBuilder<ArticlesBloc, ArticleState>(
+                        builder: (context, state) {
+                      if (state is ArticleLoading) {
                         return CircularProgressIndicator();
-                      }else if (state is ArticleLoaded){
-                        if(searchContent.isEmpty()){
+                      } else if (state is ArticleLoaded) {
+                        if (searchContent.isEmpty()) {
                           articlesSearch = state.articles;
-                        }else{
-                          articlesSearch = state.getArticlesBySearch(searchContent: searchContent);
+                        } else {
+                          articlesSearch = state.getArticlesBySearch(
+                              searchContent: searchContent);
                         }
-                        return ListView.builder(padding: EdgeInsets.zero, itemCount: articlesSearch.length, itemBuilder: (context, index){
-                          return ArticleListTile(articleToDisplay: articlesSearch[index]);
-                        });
-                      }else if (state is ArticleError){
+                        return ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: articlesSearch.length,
+                            itemBuilder: (context, index) {
+                              return ArticleListTile(
+                                  articleToDisplay: articlesSearch[index]);
+                            });
+                      } else if (state is ArticleError) {
                         return Text(state.errorMessage);
-                      }else{
+                      } else {
                         return Container();
                       }
                     }),

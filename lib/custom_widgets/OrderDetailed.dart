@@ -14,9 +14,9 @@ import 'TextDivider.dart';
 class OrderDetailed extends StatefulWidget {
   const OrderDetailed(
       {super.key,
-        required this.order,
-        required this.orderBoxId,
-        required this.closeSelection});
+      required this.order,
+      required this.orderBoxId,
+      required this.closeSelection});
 
   final CustomerOrder order;
   final int orderBoxId;
@@ -33,7 +33,7 @@ class _OrderDetailedState extends State<OrderDetailed> {
   Widget build(BuildContext context) {
     final hasPromotion = widget.order.hasAnyPromotions;
     final CustomColors customColors =
-    Theme.of(context).extension<CustomColors>()!;
+        Theme.of(context).extension<CustomColors>()!;
     return Padding(
       padding: const EdgeInsets.only(left: 14, right: 14, bottom: 10),
       child: Container(
@@ -56,20 +56,23 @@ class _OrderDetailedState extends State<OrderDetailed> {
               ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: (){
-                  Navigator.pushNamed(context, "/order", arguments: EditOrAddScreenArguments(orderId: widget.order.id, isEditMode: true));
+                onTap: () {
+                  Navigator.pushNamed(context, "/order",
+                      arguments: EditOrAddScreenArguments(
+                          orderId: widget.order.id, isEditMode: true));
                 },
                 child: Column(
                   children: [
                     TextDivider(text: "Menu", color: customColors.tertiary!),
                     Column(
-                        children: widget.order.orderElements.map((orderElement) {
-                          if (orderElement.articleType == ArticleType.menu) {
-                            return OrderLineElement(orderElement: orderElement);
-                          } else {
-                            return SizedBox.shrink();
-                          }
-                        }).toList()),
+                        children:
+                            widget.order.orderElements.map((orderElement) {
+                      if (orderElement.articleType == ArticleType.menu) {
+                        return OrderLineElement(orderElement: orderElement);
+                      } else {
+                        return SizedBox.shrink();
+                      }
+                    }).toList()),
                     Column(
                       children: [
                         Builder(builder: (context) {
@@ -81,18 +84,19 @@ class _OrderDetailedState extends State<OrderDetailed> {
                           }
                         }),
                         Column(
-                            children: widget.order.orderElements.map((orderElement) {
-                              if (orderElement.articleType == ArticleType.other) {
-                                if (!hasOther) hasOther = true;
-                                return OthersOrderLineElement(
-                                  productName: orderElement.articleName,
-                                  productPrice: orderElement.articlePrice,
-                                  quantity: orderElement.quantity,
-                                );
-                              } else {
-                                return SizedBox.shrink();
-                              }
-                            }).toList()),
+                            children:
+                                widget.order.orderElements.map((orderElement) {
+                          if (orderElement.articleType == ArticleType.other) {
+                            if (!hasOther) hasOther = true;
+                            return OthersOrderLineElement(
+                              productName: orderElement.articleName,
+                              productPrice: orderElement.articlePrice,
+                              quantity: orderElement.quantity,
+                            );
+                          } else {
+                            return SizedBox.shrink();
+                          }
+                        }).toList()),
                       ],
                     ),
                     Builder(builder: (context) {
@@ -100,10 +104,14 @@ class _OrderDetailedState extends State<OrderDetailed> {
                         return Column(
                           children: [
                             TextDivider(
-                                text: "Promotions", color: customColors.tertiary!),
+                                text: "Promotions",
+                                color: customColors.tertiary!),
                             PromotionsSummary(
-                                totalDiscount: widget.order.totalDiscount,
-                                orderElements: widget.order.orderElements),
+                              totalDiscount: widget.order.totalDiscount,
+                              orderElements: widget.order.orderElements,
+                              unlinkedPromotions:
+                                  widget.order.unlinkedPromotions,
+                            ),
                           ],
                         );
                       } else {
