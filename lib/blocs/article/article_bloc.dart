@@ -17,6 +17,7 @@ class ArticlesBloc extends Bloc<ArticleEvent, ArticleState> {
         print(e);
         emit(ArticleError(
             "Erreur de chargement des données des articles: $e \n Essayez de recharger la page, sinon relancez le service de chargement des articles sur le Raspberry Pi, puis relancez l'application"));
+        emit(ArticleInitial());
       }
     });
   }

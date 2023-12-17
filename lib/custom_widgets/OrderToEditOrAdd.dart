@@ -527,36 +527,6 @@ class _OrderToEditOrAddState extends State<OrderToEditOrAdd> {
     }).toList();
   }
 
-  //TODO: delete
-  Widget listUnlinkedPromotions(List<Promotion> promotions) {
-    return ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: promotions.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onDoubleTap: () {
-              if (promotionInEdition != null) return;
-              setState(() {
-                promotionInEdition = promotions[index];
-                articleRefOfPromotionInEdition = "";
-              });
-            },
-            child: PromotionLine(
-              onDismissed: () {
-                promotions.removeAt(index);
-                setState(() {
-                  promotionInEdition = null;
-                  articleRefOfPromotionInEdition = null;
-                });
-              },
-              promotion: promotions[index],
-              key: UniqueKey(),
-            ),
-          );
-        });
-  }
-
   void setArticlePriceAndName(ArticleLoaded state, OrderElement orderElement) {
     Article artData = state.getArticleByReference(
         alpha: orderElement.articleAlpha,

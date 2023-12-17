@@ -1,12 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shelf/shelf.dart' as shelf;
-import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_router/shelf_router.dart' as shelf_router;
 import 'package:ti_quai/blocs/article/article_events.dart';
 import 'package:ti_quai/blocs/article/article_states.dart';
 import 'package:ti_quai/blocs/order/order_events.dart';
@@ -105,6 +100,9 @@ class Homescreen extends StatefulWidget {
 class _HomescreenState extends State<Homescreen> {
   @override
   void initState() {
+    if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
+      BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
+    }
     BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
     super.initState();
   }
@@ -151,15 +149,15 @@ class _HomescreenState extends State<Homescreen> {
           } else if (state is OrderLoaded) {
             return Column(
               children: [
-                const SizedBox(
-                  height: 65,
+                SizedBox(
+                  height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
                 ),
                 Expanded(
                   flex: 7,
                   child: ScrollableOrderList(orders: state.orders),
                 ),
                 //Keeps some space at the bottom of the screen for visibility
-                Expanded(flex: 1, child: SizedBox())
+                Expanded(flex: 1, child: SizedBox()),
               ],
             );
           } else if (state is OrderOperationSuccess) {
@@ -232,34 +230,37 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
             ),
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              if (order.tableNumber <= 0) {
-                SnackBar errorNbTable = SnackBar(
-                    content: Text("Erreur! Numéro de table incorrect."));
-                ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
-                return;
-              }
-              if (order.orderElements.isEmpty) {
-                SnackBar errorNoOrderElements = SnackBar(
-                    content: Text(
-                        "Erreur! Ajoutez au moins un élément avant de valider la commande."));
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(errorNoOrderElements);
-                return;
-              }
-              if (args.isEditMode &&
-                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
-                _orderBloc.add(UpdateOrder(order));
-              } else {
-                _orderBloc.add(AddOrder(order));
-              }
-              Navigator.pop(context);
-            },
-            backgroundColor: customColors.secondary!,
-            child: const Icon(
-              Icons.check_outlined,
-              size: 40,
+          floatingActionButton: Visibility(
+            visible:MediaQuery.of(context).viewInsets.bottom == 0,
+            child: FloatingActionButton(
+              onPressed: () {
+                if (order.tableNumber <= 0) {
+                  SnackBar errorNbTable = SnackBar(
+                      content: Text("Erreur! Numéro de table incorrect."));
+                  ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
+                  return;
+                }
+                if (order.orderElements.isEmpty) {
+                  SnackBar errorNoOrderElements = SnackBar(
+                      content: Text(
+                          "Erreur! Ajoutez au moins un élément avant de valider la commande."));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(errorNoOrderElements);
+                  return;
+                }
+                if (args.isEditMode &&
+                    args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+                  _orderBloc.add(UpdateOrder(order));
+                } else {
+                  _orderBloc.add(AddOrder(order));
+                }
+                Navigator.pop(context);
+              },
+              backgroundColor: customColors.secondary!,
+              child: const Icon(
+                Icons.check_outlined,
+                size: 40,
+              ),
             ),
           ),
           body: BlocBuilder<OrdersBloc, OrdersState>(builder: (context, state) {
@@ -276,8 +277,8 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               }
               return Column(
                 children: [
-                  const SizedBox(
-                    height: 65,
+                  SizedBox(
+                    height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
                   ),
                   Expanded(
                     flex: 7,
@@ -339,7 +340,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
           centerTitle: true,
           title: TitleHeader(
             customColors: customColors,
-            title: "Gestion d'articles",
+            title: "Recherche d'articles",
           ),
           backgroundColor: Colors.white.withOpacity(0.0),
         ),
@@ -348,14 +349,15 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(flex: 2, child: SizedBox.shrink()),
+              SizedBox(
+                height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
+              ),
               SearchArticleWindow(
                 searchContent: searchContent,
                 onSearchChanged: (newSearchContent) {
                   setState(() {
                     searchContent = newSearchContent;
                   });
-                  //TODO: manage list of article returned from the form
                 },
               ),
               SizedBox(
@@ -397,17 +399,6 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                 ),
               ),
             ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            print("Navigate to add Article Page");
-            //TODO: Navigate to add article page
-          },
-          backgroundColor: customColors.secondary!,
-          child: const Icon(
-            Icons.add,
-            size: 40,
           ),
         ),
       ),

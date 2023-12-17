@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:ti_quai/extensions/string_extensions.dart';
 
 import '../processes/functions.dart';
 import '../models/CustomerOrder.dart';
@@ -70,7 +72,7 @@ class OrderSimple extends StatelessWidget {
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Text(
-                      "Règlement par ${order.paymentMethod.name}",
+                      "${kIsWeb? "Règlement par ": ""}${ kIsWeb? order.paymentMethod.name : order.paymentMethod.name.capitalize()}",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         height: 1,

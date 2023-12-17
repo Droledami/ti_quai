@@ -1,13 +1,15 @@
-//ONLY FOR THE WEB VERSION
-
 import 'package:http/http.dart';
 import 'package:http/retry.dart';
 import 'dart:convert';
 import '../models/Article.dart';
 
+String addressLAN = "192.168.1.128:65139";
+String addressWiFi = "192.168.1.129:65139";
+String localhost = "localhost:65139";
+
 class ArticleListRequester {
   final client = RetryClient(Client());
-  var url = Uri.http('localhost:65139', '/articles');
+  var url = Uri.http(addressLAN, '/articles');
 
   Future<List<Article>> getArticleData() async {
     List<Article> articleList = List<Article>.empty(growable: true);

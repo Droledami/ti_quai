@@ -15,3 +15,4 @@ class BeachGradientDecoration extends BoxDecoration {
     ),
   });
 }
+
