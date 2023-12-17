@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ti_quai/processes/functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ti_quai/enums/ArticleType.dart';
 import 'package:ti_quai/enums/PaymentMethod.dart';
@@ -143,41 +144,6 @@ class FirestoreService {
       CustomerOrder.keyPaymentMethod: order.paymentMethod.name,
       CustomerOrder.keyUnlinkedPromotions: promMapList
     });
-  }
-
-  Map<String, dynamic> convertPromotionToMap(Promotion prom) {
-    Map<String, dynamic> promMap = <String, dynamic>{};
-    promMap[Promotion.keyName] = prom.name;
-    promMap[Promotion.keyDiscountValue] = prom.discountValue;
-    return promMap;
-  }
-
-  Map<String, dynamic> convertOrderElementToMaps(OrderElement oe) {
-    Map<String, dynamic> oeMap = <String, dynamic>{};
-    Map<String, dynamic> artMap = <String, dynamic>{};
-    Map<String, dynamic> promMap = <String, dynamic>{};
-
-    oeMap[OrderElement.keyQuantity] = oe.quantity;
-    oeMap[OrderElement.keyComment] = oe.comment;
-    oeMap[OrderElement.keyCommentIsExtra] = oe.commentIsExtra;
-    oeMap[OrderElement.keyExtraPrice] = oe.extraPrice;
-    oeMap[OrderElement.keyHasPromotion] = oe.hasPromotion;
-
-    artMap[Article.keyAlpha] = oe.articleAlpha;
-    artMap[Article.keyNumber] = oe.articleNumber;
-    artMap[Article.keySubAlpha] = oe.articleSubAlpha;
-    artMap[Article.keyName] = oe.articleName;
-    artMap[Article.keyType] = oe.articleType.name;
-    artMap[Article.keyPrice] = oe.articlePrice;
-
-    oeMap[OrderElement.keyArticle] = artMap;
-
-    if (oe.hasPromotion) {
-      promMap[Promotion.keyDiscountValue] = oe.promotionDiscountValue;
-      promMap[Promotion.keyName] = oe.promotionName;
-      oeMap[OrderElement.keyPromotion] = promMap;
-    }
-    return oeMap;
   }
 
   Future<void> updateOrder(CustomerOrder order) {

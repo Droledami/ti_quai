@@ -9,6 +9,7 @@ import 'package:ti_quai/blocs/selectedOrder/selectedOrder_bloc.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
 import 'package:ti_quai/models/CustomerOrder.dart';
 import 'package:ti_quai/models/SearchContent.dart';
+import 'package:ti_quai/processes/print_order_requester.dart';
 import './theme.dart';
 import 'blocs/article/article_bloc.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
@@ -23,10 +24,6 @@ import 'custom_widgets/TitleHeader.dart';
 import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
-
-
-const articleRequest = "get_articles";
-const printOrderRequest = "print_order_request";
 
 //TODO: add end of day mode for the app
 //TODO: add tag to order to set it as paid.
@@ -272,6 +269,8 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               if (args.isEditMode &&
                   args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
                 order = state.getOrder(args.orderId);
+                final printRequester = PrintOrderRequester();
+                printRequester.sendPrintRequest(order);
               } else {
                 order = CustomerOrder.createNew();
               }

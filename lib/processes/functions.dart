@@ -1,10 +1,17 @@
-import '';
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:ti_quai/enums/EntryType.dart';
+
+import '../models/Article.dart';
+import '../models/OrderElement.dart';
+import '../models/Promotion.dart';
 
 String getHourAndMinuteString(DateTime date) {
   final String time = "${date.hour}:${date.minute < 10 ? "0${date.minute}": "${date.minute}"}";
+  return time;
+}
+
+String getFullDate(DateTime date){
+  final String time = "${date.day}/${date.month}/${date.year} - ${date.hour}:${date.minute}";
   return time;
 }
 
@@ -85,4 +92,39 @@ double? forcePriceFormat(TextEditingController textEditingController,
   } else {
     textEditingController.text = "";
   }
+}
+
+Map<String, dynamic> convertOrderElementToMaps(OrderElement oe) {
+  Map<String, dynamic> oeMap = <String, dynamic>{};
+  Map<String, dynamic> artMap = <String, dynamic>{};
+  Map<String, dynamic> promMap = <String, dynamic>{};
+
+  oeMap[OrderElement.keyQuantity] = oe.quantity;
+  oeMap[OrderElement.keyComment] = oe.comment;
+  oeMap[OrderElement.keyCommentIsExtra] = oe.commentIsExtra;
+  oeMap[OrderElement.keyExtraPrice] = oe.extraPrice;
+  oeMap[OrderElement.keyHasPromotion] = oe.hasPromotion;
+
+  artMap[Article.keyAlpha] = oe.articleAlpha;
+  artMap[Article.keyNumber] = oe.articleNumber;
+  artMap[Article.keySubAlpha] = oe.articleSubAlpha;
+  artMap[Article.keyName] = oe.articleName;
+  artMap[Article.keyType] = oe.articleType.name;
+  artMap[Article.keyPrice] = oe.articlePrice;
+
+  oeMap[OrderElement.keyArticle] = artMap;
+
+  if (oe.hasPromotion) {
+    promMap[Promotion.keyDiscountValue] = oe.promotionDiscountValue;
+    promMap[Promotion.keyName] = oe.promotionName;
+    oeMap[OrderElement.keyPromotion] = promMap;
+  }
+  return oeMap;
+}
+
+Map<String, dynamic> convertPromotionToMap(Promotion prom) {
+  Map<String, dynamic> promMap = <String, dynamic>{};
+  promMap[Promotion.keyName] = prom.name;
+  promMap[Promotion.keyDiscountValue] = prom.discountValue;
+  return promMap;
 }
