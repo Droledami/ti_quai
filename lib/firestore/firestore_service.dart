@@ -26,35 +26,48 @@ class FirestoreService {
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        List<OrderElement> orderElementList =
-            List<OrderElement>.empty(growable: true);
-        for (var oe in data[CustomerOrder.keyOrderElements]) {
-          OrderElement orderElementToAdd = createOrderElementFromSnapshot(oe);
-          orderElementList.add(orderElementToAdd);
-        }
-
-        List<Promotion> unLinkedPromotionsList =
-            List<Promotion>.empty(growable: true);
-        for (var unlinkedProm in data[CustomerOrder.keyUnlinkedPromotions]) {
-          Promotion unlinedPromotionToAdd = Promotion(
-              discountValue: (unlinkedProm[Promotion.keyDiscountValue] as num).toDouble(),
-              name: unlinkedProm[Promotion.keyName]);
-          unLinkedPromotionsList.add(unlinedPromotionToAdd);
-        }
-
-        return CustomerOrder(
-            id: doc.id,
-            tableNumber: (data[CustomerOrder.keyTableNumber] as num).toInt(),
-            date: (data[CustomerOrder.keyDate] as Timestamp).toDate(),
-            orderElements: orderElementList,
-            paymentMethod: data[CustomerOrder.keyPaymentMethod] ==
-                    PaymentMethod.bancontact.name
-                ? PaymentMethod.bancontact
-                : PaymentMethod.cash,
-            unlinkedPromotions: unLinkedPromotionsList);
+        return firebaseDataToCustomerOrder(data, doc.id);
       }).toList();
     });
+  }
+
+  CustomerOrder firebaseDataToCustomerOrder(Map<String, dynamic> data, String docId) {
+
+    List<OrderElement> orderElementList =
+        List<OrderElement>.empty(growable: true);
+    for (var oe in data[CustomerOrder.keyOrderElements]) {
+      OrderElement orderElementToAdd = createOrderElementFromSnapshot(oe);
+      orderElementList.add(orderElementToAdd);
+    }
+
+    List<Promotion> unLinkedPromotionsList =
+        List<Promotion>.empty(growable: true);
+    for (var unlinkedProm in data[CustomerOrder.keyUnlinkedPromotions]) {
+      Promotion unlinedPromotionToAdd = Promotion(
+          discountValue: (unlinkedProm[Promotion.keyDiscountValue] as num).toDouble(),
+          name: unlinkedProm[Promotion.keyName]);
+      unLinkedPromotionsList.add(unlinedPromotionToAdd);
+    }
+
+    return CustomerOrder(
+        id: docId,
+        tableNumber: (data[CustomerOrder.keyTableNumber] as num).toInt(),
+        date: (data[CustomerOrder.keyDate] as Timestamp).toDate(),
+        orderElements: orderElementList,
+        paymentMethod: data[CustomerOrder.keyPaymentMethod] ==
+                PaymentMethod.bancontact.name
+            ? PaymentMethod.bancontact
+            : PaymentMethod.cash,
+        unlinkedPromotions: unLinkedPromotionsList);
+  }
+
+  StreamSubscription<QuerySnapshot<Object?>> listenToOrdersStream(){
+    return _orderCollection
+        .orderBy("date")
+        .where("date",
+        isGreaterThan: Timestamp.fromDate(
+            DateTime.now().subtract(Duration(hours: 16))))
+        .snapshots().listen((event){});
   }
 
   OrderElement createOrderElementFromSnapshot(oe) {
@@ -175,21 +188,4 @@ class FirestoreService {
   Future<void> deleteOrder(String orderId) {
     return _orderCollection.doc(orderId).delete();
   }
-
-//Article operations
-
-//TODO: En cours de test
-// StreamSubscription<QuerySnapshot<Object?>> getArticleByRef(
-//     String alpha, int number, String subAlpha) {
-//   return _articleCollection
-//       .where(Article.keyAlpha, isEqualTo: alpha)
-//       .where(Article.keyNumber, isEqualTo: number)
-//       .where(Article.keySubAlpha, isEqualTo: subAlpha)
-//       .snapshots()
-//       .listen((event) {});
-// }
-//
-// StreamSubscription<QuerySnapshot<Object?>> getArticleStream() {
-//   return _articleCollection.snapshots().listen((event) {});
-// }
 }

@@ -5,7 +5,10 @@ import '../../models/CustomerOrder.dart';
 @immutable
 abstract class OrdersEvent{}
 
-class LoadOrders extends OrdersEvent{}
+class LoadOrdersList extends OrdersEvent{
+}
+
+class ReloadOrdersList extends OrdersEvent{}
 
 class AddOrder extends OrdersEvent{
   final CustomerOrder order;

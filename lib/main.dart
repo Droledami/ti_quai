@@ -21,12 +21,12 @@ import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/SearchArticleWindow.dart';
-import 'custom_widgets/SizedIconButton.dart';
 import 'custom_widgets/TitleHeader.dart';
 import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
 
+var headerSize;
 //TODO: add end of day mode for the app
 //TODO: add tag to order to set it as paid.
 void main() async {
@@ -49,6 +49,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    headerSize = MediaQuery.of(context).size.height*0.12;
     final fireStoreService = FirestoreService();
     return MultiBlocProvider(
       providers: [
@@ -102,7 +103,7 @@ class _HomescreenState extends State<Homescreen> {
     if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
       BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
-    BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList());
     super.initState();
   }
 
@@ -141,16 +142,16 @@ class _HomescreenState extends State<Homescreen> {
           ),
         ),
         body: BlocBuilder<OrdersBloc, OrdersState>(builder: (context, state) {
-          if (state is OrderLoading) {
+          if (state is OrdersListLoading) {
             return const Center(
               child: CircularProgressIndicator(),
             );
-          } else if (state is OrderLoaded) {
+          } else if (state is OrdersListLoaded) {
             return Column(
               children: [
                 SizedBox(
                   height:
-                      kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
+                      kIsWeb ? 65 : headerSize,
                 ),
                 Expanded(
                   flex: 7,
@@ -160,10 +161,7 @@ class _HomescreenState extends State<Homescreen> {
                 Expanded(flex: 1, child: SizedBox()),
               ],
             );
-          } else if (state is OrderOperationSuccess) {
-            _orderBloc.add(LoadOrders());
-            return Container();
-          } else if (state is OrderError) {
+          }else if (state is OrdersError) {
             return Text(state.errorMessage);
           } else {
             return Container();
@@ -197,7 +195,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
     if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
       BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
-    BlocProvider.of<OrdersBloc>(context).add(LoadOrders());
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList());
     super.initState();
   }
 
@@ -214,7 +212,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
       decoration: BeachGradientDecoration(),
       child: PopScope(
         onPopInvoked: (didPop) {
-          _orderBloc.add(LoadOrders());
+          _orderBloc.add(LoadOrdersList());
         },
         child: Scaffold(
           extendBodyBehindAppBar: true,
@@ -251,45 +249,42 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
             ),
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
-          floatingActionButton: Visibility(
-            visible: MediaQuery.of(context).viewInsets.bottom == 0,
-            child: FloatingActionButton(
-              onPressed: () {
-                if (order.tableNumber <= 0) {
-                  SnackBar errorNbTable = SnackBar(
-                      content: Text("Erreur! Numéro de table incorrect."));
-                  ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
-                  return;
-                }
-                if (order.orderElements.isEmpty) {
-                  SnackBar errorNoOrderElements = SnackBar(
-                      content: Text(
-                          "Erreur! Ajoutez au moins un élément avant de valider la commande."));
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(errorNoOrderElements);
-                  return;
-                }
-                if (args.isEditMode &&
-                    args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
-                  _orderBloc.add(UpdateOrder(order));
-                } else {
-                  _orderBloc.add(AddOrder(order));
-                }
-                Navigator.pop(context);
-              },
-              backgroundColor: customColors.secondary!,
-              child: const Icon(
-                Icons.check_outlined,
-                size: 40,
-              ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              if (order.tableNumber <= 0) {
+                SnackBar errorNbTable = SnackBar(
+                    content: Text("Erreur! Numéro de table incorrect."));
+                ScaffoldMessenger.of(context).showSnackBar(errorNbTable);
+                return;
+              }
+              if (order.orderElements.isEmpty) {
+                SnackBar errorNoOrderElements = SnackBar(
+                    content: Text(
+                        "Erreur! Ajoutez au moins un élément avant de valider la commande."));
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(errorNoOrderElements);
+                return;
+              }
+              if (args.isEditMode &&
+                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+                _orderBloc.add(UpdateOrder(order));
+              } else {
+                _orderBloc.add(AddOrder(order));
+              }
+              Navigator.pop(context);
+            },
+            backgroundColor: customColors.secondary!,
+            child: const Icon(
+              Icons.check_outlined,
+              size: 40,
             ),
           ),
           body: BlocBuilder<OrdersBloc, OrdersState>(builder: (context, state) {
-            if (state is OrderLoading) {
+            if (state is OrdersListLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
-            } else if (state is OrderLoaded) {
+            } else if (state is OrdersListLoaded) {
               if (args.isEditMode &&
                   args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
                 order = state.getOrder(args.orderId);
@@ -300,7 +295,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                 children: [
                   SizedBox(
                     height:
-                        kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
+                        kIsWeb ? 65 : headerSize,
                   ),
                   Expanded(
                     flex: 7,
@@ -313,9 +308,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                   Expanded(flex: 1, child: SizedBox()),
                 ],
               );
-            } else if (state is OrderOperationSuccess) {
-              return Container();
-            } else if (state is OrderError) {
+            } else if (state is OrdersError) {
               print(state.errorMessage);
               return Container();
             } else {
@@ -372,7 +365,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
+                height: kIsWeb ? 65 : headerSize,
               ),
               SearchArticleWindow(
                 searchContent: searchContent,
@@ -383,7 +376,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
                 },
               ),
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.01,
+                height: 5,
               ),
               Flexible(
                 flex: 6,

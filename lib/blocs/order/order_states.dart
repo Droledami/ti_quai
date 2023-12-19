@@ -5,14 +5,16 @@ import '../../models/CustomerOrder.dart';
 @immutable
 abstract class OrdersState {}
 
-class OrderInitial extends OrdersState{}
+class OrdersInitial extends OrdersState{}
 
-class OrderLoading extends OrdersState{}
+class OrdersListLoading extends OrdersState{}
 
-class OrderLoaded extends OrdersState{
+class OrdersListReloading extends OrdersState{}
+
+class OrdersListLoaded extends OrdersState{
   final List<CustomerOrder> orders;
 
-  OrderLoaded(this.orders);
+  OrdersListLoaded(this.orders);
 
   CustomerOrder getOrder(String orderId){
     for(CustomerOrder order in orders){
@@ -24,14 +26,14 @@ class OrderLoaded extends OrdersState{
   }
 }
 
-class OrderOperationSuccess extends OrdersState{
+class OrdersOperationSuccess extends OrdersState{
   final String message;
 
-  OrderOperationSuccess(this.message);
+  OrdersOperationSuccess(this.message);
 }
 
-class OrderError extends OrdersState{
+class OrdersError extends OrdersState{
   final String errorMessage;
 
-  OrderError(this.errorMessage);
+  OrdersError(this.errorMessage);
 }
