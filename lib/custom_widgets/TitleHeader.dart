@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 
+import '../custom_materials/decoration_functions.dart';
 import '../theme.dart';
 
 class TitleHeader extends StatelessWidget {
@@ -18,20 +18,7 @@ class TitleHeader extends StatelessWidget {
     return Container(
       width: 800,
       height: 55,
-      decoration: ShapeDecoration(
-        gradient: LinearGradient(
-          begin: const Alignment(0.00, -1.00),
-          end: const Alignment(0, 1),
-          stops: const [0.5, 8.0],
-          colors: [
-            customColors.primaryLight!,
-            customColors.primary!,
-          ],
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-      ),
+      decoration: buildAppBarDecoration(customColors),
       child: Center(
         child: Text(
           title,

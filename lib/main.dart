@@ -15,11 +15,13 @@ import 'blocs/article/article_bloc.dart';
 import 'custom_materials/BeachGradientDecoration.dart';
 import 'blocs/order/order_bloc.dart';
 import 'blocs/order/order_states.dart';
+import 'custom_materials/decoration_functions.dart';
 import 'custom_widgets/ArticleListTile.dart';
 import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
 import 'custom_widgets/SearchArticleWindow.dart';
+import 'custom_widgets/SizedIconButton.dart';
 import 'custom_widgets/TitleHeader.dart';
 import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
@@ -147,7 +149,8 @@ class _HomescreenState extends State<Homescreen> {
             return Column(
               children: [
                 SizedBox(
-                  height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
+                  height:
+                      kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
                 ),
                 Expanded(
                   flex: 7,
@@ -218,6 +221,27 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
           //Allows parent container's bg to display
           backgroundColor: Colors.transparent,
           appBar: AppBar(
+            actions: [
+              Builder(builder: (context) {
+                if (args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+                  return Container(
+                    height: 55,
+                    width: 55,
+                    decoration: buildAppBarDecoration(customColors),
+                    child: IconButton(
+                      onPressed: () {
+                        final printRequester = PrintOrderRequester();
+                        printRequester.sendPrintRequest(order);
+                      },
+                      icon: Icon(Icons.print),
+                      
+                    ),
+                  );
+                } else {
+                  return SizedBox.shrink();
+                }
+              })
+            ],
             //leading: BackButton(), TODO:ceci
             centerTitle: true,
             title: TitleHeader(
@@ -228,7 +252,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
           floatingActionButton: Visibility(
-            visible:MediaQuery.of(context).viewInsets.bottom == 0,
+            visible: MediaQuery.of(context).viewInsets.bottom == 0,
             child: FloatingActionButton(
               onPressed: () {
                 if (order.tableNumber <= 0) {
@@ -269,15 +293,14 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               if (args.isEditMode &&
                   args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
                 order = state.getOrder(args.orderId);
-                final printRequester = PrintOrderRequester();
-                printRequester.sendPrintRequest(order);
               } else {
                 order = CustomerOrder.createNew();
               }
               return Column(
                 children: [
                   SizedBox(
-                    height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
+                    height:
+                        kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
                   ),
                   Expanded(
                     flex: 7,
@@ -349,7 +372,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: kIsWeb? 65 : MediaQuery.of(context).size.height *0.12,
+                height: kIsWeb ? 65 : MediaQuery.of(context).size.height * 0.12,
               ),
               SearchArticleWindow(
                 searchContent: searchContent,
