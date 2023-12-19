@@ -13,8 +13,10 @@ class OrderHeader extends StatelessWidget {
       required this.articleNumber,
       required this.orderDate,
       required this.isEditMode,
-        this.textEditingController,
-      this.closeSelection}) : assert (((textEditingController !=null && isEditMode) || !isEditMode), "If isEditMode is true, then a textEditingController is required, if a controller is set but isEditMode is set to false, the controller will be useless.");
+      this.textEditingController,
+      this.closeSelection})
+      : assert(((textEditingController != null && isEditMode) || !isEditMode),
+            "If isEditMode is true, then a textEditingController is required, if a controller is set but isEditMode is set to false, the controller will be useless.");
 
   final int tableNumber;
   final int articleNumber;
@@ -45,31 +47,30 @@ class OrderHeader extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Row(
-              children: [
-                Builder(builder: (context) {
+            Row(children: [
+              Builder(builder: (context) {
+                if (isEditMode) {
                   return Expanded(
-                    flex: isEditMode? 2: 1,
+                    flex: 2,
                     child: Row(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(left: 10, top: 7, bottom: 10),
+                          padding: const EdgeInsets.only(
+                              left: 10, top: 7, bottom: 10),
                           child: Text(
-                            'Table ${isEditMode ? "" : tableNumber}',
+                            'Table',
                             style: TextStyle(
                               height: 1,
                               fontSize: 30,
                             ),
                           ),
                         ),
-                    Builder(
-                      builder: (context) {
-                        if(isEditMode){
-                        return EntryBox(
-                          validator: (value){
-                            if(value != null && RegExp(r"^[1-9][0-9]?$").hasMatch(value)){
+                        EntryBox(
+                          validator: (value) {
+                            if (value != null &&
+                                RegExp(r"^[1-9][0-9]?$").hasMatch(value)) {
                               return null;
-                            }else{
+                            } else {
                               return "Erreur N°";
                             }
                           },
@@ -79,17 +80,31 @@ class OrderHeader extends StatelessWidget {
                           orderEntryType: QuaiEntry.tableNumber,
                           maxLength: 2,
                           placeholder: "n°",
-                        );
-                        }else{
-                          return SizedBox.shrink();
-                        }
-                      }
-                    ),
+                        ),
                       ],
                     ),
                   );
-                }),
-                Expanded(
+                } else {
+                  return Expanded(
+                    flex: 5,
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.only(left: 10, top: 7, bottom: 10),
+                      child: Text(
+                        'Table $tableNumber',
+                        style: TextStyle(
+                          height: 1,
+                          fontSize: 30,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              }),
+              Expanded(
+                flex: 5,
+                child: Padding(
+                  padding: const EdgeInsets.only(left:5),
                   child: Text(
                     articleNumber > 1
                         ? "$articleNumber articles"
@@ -101,21 +116,23 @@ class OrderHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 10, top:10, bottom:10),
-                    child: Text(
-                      orderTime,
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                        height: 1,
-                        fontSize: 24,
-                      ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(right: 10, top: 10, bottom: 10),
+                  child: Text(
+                    orderTime,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      height: 1,
+                      fontSize: 24,
                     ),
                   ),
                 ),
-              ]
-            ),
+              ),
+            ]),
             Row(
               children: [
                 LittleCard(

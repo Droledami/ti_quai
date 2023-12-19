@@ -26,7 +26,6 @@ import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
 
-var headerSize;
 //TODO: add end of day mode for the app
 //TODO: add tag to order to set it as paid.
 void main() async {
@@ -49,7 +48,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    headerSize = MediaQuery.of(context).size.height*0.12;
     final fireStoreService = FirestoreService();
     return MultiBlocProvider(
       providers: [
@@ -151,7 +149,7 @@ class _HomescreenState extends State<Homescreen> {
               children: [
                 SizedBox(
                   height:
-                      kIsWeb ? 65 : headerSize,
+                      kIsWeb ? 65 : 100,
                 ),
                 Expanded(
                   flex: 7,
@@ -245,7 +243,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
             title: TitleHeader(
               customColors: customColors,
               title:
-                  "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater ? "Modifier" : "Ajouter"} une commande",
+                  "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater ? "Modifier" : "Ajouter une"} commande",
             ),
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
@@ -295,7 +293,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                 children: [
                   SizedBox(
                     height:
-                        kIsWeb ? 65 : headerSize,
+                        kIsWeb ? 65 : 100,
                   ),
                   Expanded(
                     flex: 7,
@@ -365,7 +363,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: kIsWeb ? 65 : headerSize,
+                height: kIsWeb ? 65 : 100,
               ),
               SearchArticleWindow(
                 searchContent: searchContent,
