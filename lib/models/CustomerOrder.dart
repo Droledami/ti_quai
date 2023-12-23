@@ -16,6 +16,7 @@ class CustomerOrder {
   static const String keyOrderElements = "orderElements";
   static const String keyPaymentMethod = "paymentMethod";
   static const String keyUnlinkedPromotions = "unlinkedPromotions";
+  static const String keyIsPaid = "isPaid";
 
   CustomerOrder(
       {required this.id,
@@ -23,7 +24,8 @@ class CustomerOrder {
       required this.date,
       required this.orderElements,
       required this.paymentMethod,
-      required this.unlinkedPromotions});
+      required this.unlinkedPromotions,
+      required this.isPaid});
 
   CustomerOrder.createNew()
       : id = EditOrAddScreenArguments.keyDefinedLater,
@@ -31,7 +33,8 @@ class CustomerOrder {
         date = DateTime.now(),
         orderElements = List<OrderElement>.empty(growable: true),
         paymentMethod = PaymentMethod.bancontact,
-        unlinkedPromotions = List<Promotion>.empty(growable: true);
+        unlinkedPromotions = List<Promotion>.empty(growable: true),
+        isPaid = false;
 
   String id;
   int tableNumber;
@@ -39,6 +42,7 @@ class CustomerOrder {
   List<OrderElement> orderElements;
   PaymentMethod paymentMethod;
   List<Promotion> unlinkedPromotions;
+  bool isPaid;
 
   //getters
   double get totalPrice {

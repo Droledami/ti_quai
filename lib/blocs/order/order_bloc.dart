@@ -12,7 +12,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState>{
 
   OrdersBloc(this._firestoreService) : super(OrdersInitial()){
     
-    _firestoreService.listenToOrdersStream().onData((data) async {
+    _firestoreService.listenToUnpaidOrdersStream().onData((data) async {
       handleDataChanges(data);
     });
 

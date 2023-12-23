@@ -27,7 +27,6 @@ import 'firebase_options.dart';
 import 'models/Article.dart';
 
 //TODO: add end of day mode for the app
-//TODO: add tag to order to set it as paid.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -131,7 +130,9 @@ class _HomescreenState extends State<Homescreen> {
             Navigator.pushNamed(context, "/order",
                 arguments: EditOrAddScreenArguments(
                     orderId: EditOrAddScreenArguments.keyDefinedLater,
-                    isEditMode: true));
+                    isEditMode: true,
+                  isOrderPaid: false
+                ));
           },
           backgroundColor: customColors.secondary!,
           child: const Icon(
@@ -148,8 +149,7 @@ class _HomescreenState extends State<Homescreen> {
             return Column(
               children: [
                 SizedBox(
-                  height:
-                      kIsWeb ? 65 : 100,
+                  height: kIsWeb ? 65 : 100,
                 ),
                 Expanded(
                   flex: 7,
@@ -159,7 +159,7 @@ class _HomescreenState extends State<Homescreen> {
                 Expanded(flex: 1, child: SizedBox()),
               ],
             );
-          }else if (state is OrdersError) {
+          } else if (state is OrdersError) {
             return Text(state.errorMessage);
           } else {
             return Container();
@@ -173,10 +173,11 @@ class _HomescreenState extends State<Homescreen> {
 class EditOrAddScreenArguments {
   final String orderId;
   final bool isEditMode;
+  final bool isOrderPaid;
 
   static const String keyDefinedLater = "-definedLater-";
 
-  EditOrAddScreenArguments({required this.orderId, required this.isEditMode});
+  EditOrAddScreenArguments({required this.orderId, required this.isEditMode, required this.isOrderPaid});
 }
 
 class EditOrAddOrderScreen extends StatefulWidget {
@@ -218,32 +219,40 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
           backgroundColor: Colors.transparent,
           appBar: AppBar(
             actions: [
+              //The print order button won't be displayed if it is a new order
               Builder(builder: (context) {
-                if (args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
-                  return Container(
-                    height: 55,
-                    width: 55,
-                    decoration: buildAppBarDecoration(customColors),
-                    child: IconButton(
-                      onPressed: () {
-                        final printRequester = PrintOrderRequester();
-                        printRequester.sendPrintRequest(order);
-                      },
-                      icon: Icon(Icons.print),
-                      
-                    ),
+                if (isOrderNotNew(args)) {
+                  return ActionIconButton(
+                    iconData: Icons.print,
+                    onPressed: () {
+                      final printRequester = PrintOrderRequester();
+                      printRequester.sendPrintRequest(order);
+                    },
                   );
                 } else {
                   return SizedBox.shrink();
                 }
-              })
+              }),
+              Builder(
+                  //The set order as paid button won't be displayed if it is a new order
+                  builder: (context) {
+                if (isOrderNotNew(args) && !args.isOrderPaid) {
+                  return ActionIconButton(
+                      iconData: Icons.attach_money,
+                      onPressed: () {
+                        confirmSetOrderAsPaidDialog(context, order);
+                      });
+                } else {
+                  return SizedBox.shrink();
+                }
+              }),
             ],
             //leading: BackButton(), TODO:ceci
             centerTitle: true,
             title: TitleHeader(
               customColors: customColors,
               title:
-                  "${args.isEditMode && args.orderId != EditOrAddScreenArguments.keyDefinedLater ? "Modifier" : "Ajouter une"} commande",
+                  "${isOrderNotNew(args) ? "Modifier" : "Ajouter une"} commande",
             ),
             backgroundColor: Colors.white.withOpacity(0.0),
           ),
@@ -263,8 +272,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                     .showSnackBar(errorNoOrderElements);
                 return;
               }
-              if (args.isEditMode &&
-                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+              if (isOrderNotNew(args)) {
                 _orderBloc.add(UpdateOrder(order));
               } else {
                 _orderBloc.add(AddOrder(order));
@@ -283,8 +291,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                 child: CircularProgressIndicator(),
               );
             } else if (state is OrdersListLoaded) {
-              if (args.isEditMode &&
-                  args.orderId != EditOrAddScreenArguments.keyDefinedLater) {
+              if (isOrderNotNew(args)) {
                 order = state.getOrder(args.orderId);
               } else {
                 order = CustomerOrder.createNew();
@@ -292,8 +299,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               return Column(
                 children: [
                   SizedBox(
-                    height:
-                        kIsWeb ? 65 : 100,
+                    height: kIsWeb ? 65 : 100,
                   ),
                   Expanded(
                     flex: 7,
@@ -313,6 +319,66 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               return Container();
             }
           }),
+        ),
+      ),
+    );
+  }
+
+  Future<void> confirmSetOrderAsPaidDialog(
+      BuildContext context, CustomerOrder order) {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Marquer la commande comme payée ?"),
+            content: Text(
+                "Cette commande n'apparaîtra plus dans la liste des commandes en cours. Elle apparaîtra toute fois dans la liste des comptes à faire en fin de journée mais ne pourra plus y être modifiée."),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Annuler")),
+              TextButton(
+                  onPressed: () {
+                    order.isPaid = true;
+                    BlocProvider.of<OrdersBloc>(context).add(UpdateOrder(order));
+                    Navigator.of(context).popUntil(ModalRoute.withName('/home'));
+                  },
+                  child: const Text("Confirmer"))
+            ],
+          );
+        });
+  }
+
+  bool isOrderNotNew(EditOrAddScreenArguments args) =>
+      args.isEditMode &&
+      args.orderId != EditOrAddScreenArguments.keyDefinedLater;
+}
+
+class ActionIconButton extends StatelessWidget {
+  const ActionIconButton({
+    super.key,
+    required this.iconData,
+    required this.onPressed,
+  });
+
+  final IconData iconData;
+  final Function onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomColors customColors =
+        Theme.of(context).extension<CustomColors>()!;
+    return Padding(
+      padding: const EdgeInsets.only(left: 5),
+      child: Container(
+        height: 55,
+        width: 55,
+        decoration: buildAppBarDecoration(customColors),
+        child: IconButton(
+          onPressed: () => onPressed(),
+          icon: Icon(iconData),
         ),
       ),
     );

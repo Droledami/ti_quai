@@ -51,7 +51,7 @@ class OrderHeader extends StatelessWidget {
               Builder(builder: (context) {
                 if (isEditMode) {
                   return Expanded(
-                    flex: 2,
+                    flex: 6,
                     child: Row(
                       children: [
                         Padding(

@@ -15,22 +15,6 @@ class FirestoreService {
   final CollectionReference _orderCollection =
       FirebaseFirestore.instance.collection("Order");
 
-  Stream<List<CustomerOrder>> getOrders() {
-    //Only get orders of the last 24 hours
-    return _orderCollection
-        .orderBy("date")
-        .where("date",
-            isGreaterThan: Timestamp.fromDate(
-                DateTime.now().subtract(Duration(hours: 16))))
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return firebaseDataToCustomerOrder(data, doc.id);
-      }).toList();
-    });
-  }
-
   CustomerOrder firebaseDataToCustomerOrder(Map<String, dynamic> data, String docId) {
 
     List<OrderElement> orderElementList =
@@ -58,12 +42,14 @@ class FirestoreService {
                 PaymentMethod.bancontact.name
             ? PaymentMethod.bancontact
             : PaymentMethod.cash,
-        unlinkedPromotions: unLinkedPromotionsList);
+        unlinkedPromotions: unLinkedPromotionsList,
+        isPaid: data[CustomerOrder.keyIsPaid]);
   }
 
-  StreamSubscription<QuerySnapshot<Object?>> listenToOrdersStream(){
+  StreamSubscription<QuerySnapshot<Object?>> listenToUnpaidOrdersStream(){
     return _orderCollection
         .orderBy("date")
+        .where("isPaid", isEqualTo: false)
         .where("date",
         isGreaterThan: Timestamp.fromDate(
             DateTime.now().subtract(Duration(hours: 16))))
@@ -155,7 +141,8 @@ class FirestoreService {
       CustomerOrder.keyDate: order.date,
       CustomerOrder.keyOrderElements: oeMapList,
       CustomerOrder.keyPaymentMethod: order.paymentMethod.name,
-      CustomerOrder.keyUnlinkedPromotions: promMapList
+      CustomerOrder.keyUnlinkedPromotions: promMapList,
+      CustomerOrder.keyIsPaid: order.isPaid
     });
   }
 
@@ -181,7 +168,8 @@ class FirestoreService {
       CustomerOrder.keyDate: order.date,
       CustomerOrder.keyOrderElements: oeMapList,
       CustomerOrder.keyPaymentMethod: order.paymentMethod.name,
-      CustomerOrder.keyUnlinkedPromotions: promMapList
+      CustomerOrder.keyUnlinkedPromotions: promMapList,
+      CustomerOrder.keyIsPaid: order.isPaid
     });
   }
 

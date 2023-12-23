@@ -57,9 +57,10 @@ class _OrderDetailedState extends State<OrderDetailed> {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
+                  if(widget.order.isPaid) return;
                   Navigator.pushNamed(context, "/order",
                       arguments: EditOrAddScreenArguments(
-                          orderId: widget.order.id, isEditMode: true));
+                          orderId: widget.order.id, isEditMode: true, isOrderPaid: widget.order.isPaid));
                 },
                 child: Column(
                   children: [
