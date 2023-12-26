@@ -70,7 +70,7 @@ class EntryBox extends StatelessWidget {
               ),
               style: TextStyle(color: Colors.black87, fontSize: 28),
               maxLength: maxLength,
-              keyboardType: TextInputType.text,//orderEntryToInputType(orderEntryType), //TODO: change input check based on OS I guess...
+              keyboardType: TextInputType.text,//orderEntryToInputType(orderEntryType), //TODO: reminder that it's possible to get an adapted keyboard on mobile phones (future update)
             ),
           ),
         ),

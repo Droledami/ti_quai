@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class BeachGradientDecoration extends BoxDecoration {
   const BeachGradientDecoration({
+    super.image = const DecorationImage(image: AssetImage('logo.png'), alignment: Alignment.bottomLeft, fit: BoxFit.none),
     super.gradient = const LinearGradient(
       begin: Alignment(0.00, -1.00),
       end: Alignment(0, 1),

@@ -15,8 +15,8 @@ class FirestoreService {
   final CollectionReference _orderCollection =
       FirebaseFirestore.instance.collection("Order");
 
-  CustomerOrder firebaseDataToCustomerOrder(Map<String, dynamic> data, String docId) {
-
+  CustomerOrder firebaseDataToCustomerOrder(
+      Map<String, dynamic> data, String docId) {
     List<OrderElement> orderElementList =
         List<OrderElement>.empty(growable: true);
     for (var oe in data[CustomerOrder.keyOrderElements]) {
@@ -28,7 +28,8 @@ class FirestoreService {
         List<Promotion>.empty(growable: true);
     for (var unlinkedProm in data[CustomerOrder.keyUnlinkedPromotions]) {
       Promotion unlinedPromotionToAdd = Promotion(
-          discountValue: (unlinkedProm[Promotion.keyDiscountValue] as num).toDouble(),
+          discountValue:
+              (unlinkedProm[Promotion.keyDiscountValue] as num).toDouble(),
           name: unlinkedProm[Promotion.keyName]);
       unLinkedPromotionsList.add(unlinedPromotionToAdd);
     }
@@ -46,14 +47,15 @@ class FirestoreService {
         isPaid: data[CustomerOrder.keyIsPaid]);
   }
 
-  StreamSubscription<QuerySnapshot<Object?>> listenToUnpaidOrdersStream(){
+  StreamSubscription<QuerySnapshot<Object?>> listenToOrdersStream(
+      bool paidOrders) {
     return _orderCollection
         .orderBy("date")
-        .where("isPaid", isEqualTo: false)
         .where("date",
-        isGreaterThan: Timestamp.fromDate(
-            DateTime.now().subtract(Duration(hours: 16))))
-        .snapshots().listen((event){});
+            isGreaterThan: Timestamp.fromDate(
+                DateTime.now().subtract(Duration(hours: 16))))
+        .snapshots()
+        .listen((event) {});
   }
 
   OrderElement createOrderElementFromSnapshot(oe) {
@@ -128,9 +130,10 @@ class FirestoreService {
       oeMapList.add(oeMap);
     }
 
-    List<Map<String, dynamic>> promMapList = List<Map<String, dynamic>>.empty(growable: true);
+    List<Map<String, dynamic>> promMapList =
+        List<Map<String, dynamic>>.empty(growable: true);
 
-    for(Promotion prom in order.unlinkedPromotions){
+    for (Promotion prom in order.unlinkedPromotions) {
       Map<String, dynamic> promMap = convertPromotionToMap(prom);
 
       promMapList.add(promMap);
@@ -155,9 +158,10 @@ class FirestoreService {
       oeMapList.add(oeMap);
     }
 
-    List<Map<String, dynamic>> promMapList = List<Map<String, dynamic>>.empty(growable: true);
+    List<Map<String, dynamic>> promMapList =
+        List<Map<String, dynamic>>.empty(growable: true);
 
-    for(Promotion prom in order.unlinkedPromotions){
+    for (Promotion prom in order.unlinkedPromotions) {
       Map<String, dynamic> promMap = convertPromotionToMap(prom);
 
       promMapList.add(promMap);

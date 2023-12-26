@@ -17,6 +17,7 @@ import 'blocs/order/order_bloc.dart';
 import 'blocs/order/order_states.dart';
 import 'custom_materials/decoration_functions.dart';
 import 'custom_widgets/ArticleListTile.dart';
+import 'custom_widgets/ButtonBack.dart';
 import 'custom_widgets/MenuButton.dart';
 import 'custom_widgets/QuaiDrawer.dart';
 import 'custom_widgets/ScrollableOrderList.dart';
@@ -26,7 +27,6 @@ import 'custom_widgets/OrderToEditOrAdd.dart';
 import 'firebase_options.dart';
 import 'models/Article.dart';
 
-//TODO: add end of day mode for the app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -51,7 +51,7 @@ class App extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<OrdersBloc>(
-            create: (context) => OrdersBloc(fireStoreService)),
+            create: (context) => OrdersBloc(fireStoreService, false)),
         BlocProvider<SelectedOrderBloc>(
           create: (context) => SelectedOrderBloc(),
         ),
@@ -95,12 +95,14 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
+  bool listingPaidOrders = false;
+
   @override
   void initState() {
     if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
       BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
-    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList());
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList(listingPaidOrders));
     super.initState();
   }
 
@@ -116,6 +118,16 @@ class _HomescreenState extends State<Homescreen> {
         //Allows parent container's bg to display
         backgroundColor: Colors.transparent,
         appBar: AppBar(
+          actions: [
+            ActionIconButton(
+                iconData: listingPaidOrders ? Icons.monetization_on : Icons.monetization_on_outlined,
+                onPressed: () {
+                  setState(() {
+                    listingPaidOrders = !listingPaidOrders;
+                    _orderBloc.add(ReloadOrdersList(listingPaidOrders));
+                  });
+                }),
+          ],
           leading: MenuButton(customColors: customColors),
           centerTitle: true,
           title: TitleHeader(
@@ -131,8 +143,7 @@ class _HomescreenState extends State<Homescreen> {
                 arguments: EditOrAddScreenArguments(
                     orderId: EditOrAddScreenArguments.keyDefinedLater,
                     isEditMode: true,
-                  isOrderPaid: false
-                ));
+                    isOrderPaid: false));
           },
           backgroundColor: customColors.secondary!,
           child: const Icon(
@@ -153,7 +164,15 @@ class _HomescreenState extends State<Homescreen> {
                 ),
                 Expanded(
                   flex: 7,
-                  child: ScrollableOrderList(orders: state.orders),
+                  child: Builder(builder: (context) {
+                    if (listingPaidOrders) {
+                      return ScrollableOrderList(orders: state.orders);
+                    } else {
+                      return ScrollableOrderList(
+                          orders: state.getUnpaidOrders()
+                      );
+                    }
+                  }),
                 ),
                 //Keeps some space at the bottom of the screen for visibility
                 Expanded(flex: 1, child: SizedBox()),
@@ -177,7 +196,10 @@ class EditOrAddScreenArguments {
 
   static const String keyDefinedLater = "-definedLater-";
 
-  EditOrAddScreenArguments({required this.orderId, required this.isEditMode, required this.isOrderPaid});
+  EditOrAddScreenArguments(
+      {required this.orderId,
+      required this.isEditMode,
+      required this.isOrderPaid});
 }
 
 class EditOrAddOrderScreen extends StatefulWidget {
@@ -194,7 +216,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
     if (BlocProvider.of<ArticlesBloc>(context).state is! ArticleLoaded) {
       BlocProvider.of<ArticlesBloc>(context).add(LoadArticle());
     }
-    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList());
+    BlocProvider.of<OrdersBloc>(context).add(LoadOrdersList(false));
     super.initState();
   }
 
@@ -211,7 +233,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
       decoration: BeachGradientDecoration(),
       child: PopScope(
         onPopInvoked: (didPop) {
-          _orderBloc.add(LoadOrdersList());
+          _orderBloc.add(LoadOrdersList(false));
         },
         child: Scaffold(
           extendBodyBehindAppBar: true,
@@ -247,7 +269,7 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
                 }
               }),
             ],
-            //leading: BackButton(), TODO:ceci
+            leading: ButtonBack(customColors: customColors,),
             centerTitle: true,
             title: TitleHeader(
               customColors: customColors,
@@ -342,8 +364,10 @@ class _EditOrAddOrderScreenState extends State<EditOrAddOrderScreen> {
               TextButton(
                   onPressed: () {
                     order.isPaid = true;
-                    BlocProvider.of<OrdersBloc>(context).add(UpdateOrder(order));
-                    Navigator.of(context).popUntil(ModalRoute.withName('/home'));
+                    BlocProvider.of<OrdersBloc>(context)
+                        .add(UpdateOrder(order));
+                    Navigator.of(context)
+                        .popUntil(ModalRoute.withName('/home'));
                   },
                   child: const Text("Confirmer"))
             ],
@@ -378,7 +402,7 @@ class ActionIconButton extends StatelessWidget {
         decoration: buildAppBarDecoration(customColors),
         child: IconButton(
           onPressed: () => onPressed(),
-          icon: Icon(iconData),
+          icon: Icon(iconData, size: 36),
         ),
       ),
     );
@@ -415,7 +439,7 @@ class _ArticleSearchPageState extends State<ArticleSearchPage> {
         extendBodyBehindAppBar: true,
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          //leading: BackButton(), TODO: le mettre ici aussi une fois qu'il est fait
+          leading: MenuButton(customColors: customColors),
           centerTitle: true,
           title: TitleHeader(
             customColors: customColors,

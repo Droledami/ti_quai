@@ -11,7 +11,7 @@ class OrdersListLoading extends OrdersState{}
 
 class OrdersListReloading extends OrdersState{}
 
-class OrdersListLoaded extends OrdersState{
+class OrdersListLoaded extends OrdersState{ //Used during service
   final List<CustomerOrder> orders;
 
   OrdersListLoaded(this.orders);
@@ -23,6 +23,10 @@ class OrdersListLoaded extends OrdersState{
       }
     }
     throw Exception("Couldn't find order with ID: $orderId");
+  }
+
+  List<CustomerOrder> getUnpaidOrders(){
+    return orders.where((order) => order.isPaid == false).toList();
   }
 }
 

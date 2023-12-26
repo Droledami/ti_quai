@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ti_quai/firestore/firestore_service.dart';
@@ -9,16 +11,17 @@ import 'order_states.dart';
 class OrdersBloc extends Bloc<OrdersEvent, OrdersState>{
   final FirestoreService _firestoreService;
   final List<CustomerOrder> ordersList = List<CustomerOrder>.empty(growable: true);
+  bool paidOrders;
 
-  OrdersBloc(this._firestoreService) : super(OrdersInitial()){
-    
-    _firestoreService.listenToUnpaidOrdersStream().onData((data) async {
+  OrdersBloc(this._firestoreService, this.paidOrders) : super(OrdersInitial()){
+
+    _firestoreService.listenToOrdersStream(paidOrders).onData((data) async {
       handleDataChanges(data);
     });
 
-    on<ReloadOrdersList>((event,emit){
+    on<ReloadOrdersList>((event,emit) async {
       emit(OrdersListReloading());
-      add(LoadOrdersList());
+      add(LoadOrdersList(event.paidOrders));
     });
 
     on<LoadOrdersList>((event, emit) async {
@@ -60,7 +63,7 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState>{
         case DocumentChangeType.added:
           Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
           ordersList.add(_firestoreService.firebaseDataToCustomerOrder(data, change.doc.id));
-          add(ReloadOrdersList());
+          add(ReloadOrdersList(paidOrders));
           break;
         case DocumentChangeType.modified:
           Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
@@ -69,11 +72,11 @@ class OrdersBloc extends Bloc<OrdersEvent, OrdersState>{
               ordersList[i] = _firestoreService.firebaseDataToCustomerOrder(data, change.doc.id);
             }
           }
-          add(ReloadOrdersList());
+          add(ReloadOrdersList(paidOrders));
           break;
         case DocumentChangeType.removed:
           ordersList.removeWhere((order) => order.id == change.doc.id);
-          add(ReloadOrdersList());
+          add(ReloadOrdersList(paidOrders));
           break;
       }
     }

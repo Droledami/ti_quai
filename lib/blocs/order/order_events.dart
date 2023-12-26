@@ -6,9 +6,16 @@ import '../../models/CustomerOrder.dart';
 abstract class OrdersEvent{}
 
 class LoadOrdersList extends OrdersEvent{
+  final bool paidOrders;
+
+  LoadOrdersList(this.paidOrders);
 }
 
-class ReloadOrdersList extends OrdersEvent{}
+class ReloadOrdersList extends OrdersEvent{
+  final bool paidOrders;
+
+  ReloadOrdersList(this.paidOrders);
+}
 
 class AddOrder extends OrdersEvent{
   final CustomerOrder order;
