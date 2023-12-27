@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:ti_quai/extensions/string_extensions.dart';
 
-import '../processes/functions.dart';
-import '../models/CustomerOrder.dart';
-import '../theme.dart';
+import '../../custom_materials/theme.dart';
+import '../../models/CustomerOrder.dart';
+import '../../processes/functions.dart';
 
 class OrderSimple extends StatelessWidget {
   const OrderSimple({super.key, required this.order, required this.changeSelection, required this.orderBoxId});

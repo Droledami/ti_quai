@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
+import '../../custom_materials/theme.dart';
 
 class PromotionCard extends StatelessWidget {
   const PromotionCard(

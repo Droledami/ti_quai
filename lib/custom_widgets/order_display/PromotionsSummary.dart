@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/OrderElement.dart';
-import '../models/Promotion.dart';
-import '../theme.dart';
-import 'LittleCard.dart';
+import '../../models/OrderElement.dart';
+import '../../models/Promotion.dart';
+import '../../custom_materials/theme.dart';
+import '../LittleCard.dart';
 import 'PromotionCard.dart';
 
 class PromotionsSummary extends StatelessWidget {
@@ -17,7 +17,7 @@ class PromotionsSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<Promotion> fullListOfPromotions = List<Promotion>.from(unlinkedPromotions);
-    orderElements.forEach((orderElement) {
+    for (var orderElement in orderElements) {
       if(orderElement.promotion != null && orderElement.hasPromotion){
       fullListOfPromotions.add(orderElement.promotion!);
       }else if(orderElement.hasPromotion && orderElement.promotion == null){
@@ -28,7 +28,7 @@ class PromotionsSummary extends StatelessWidget {
             "Warning, a promotion has incorrectly set values : hasPromotion is false, yet promotion has data");
         fullListOfPromotions.add(orderElement.promotion!);
       }
-    });
+    }
 
     CustomColors customColors = Theme.of(context).extension<CustomColors>()!;
 

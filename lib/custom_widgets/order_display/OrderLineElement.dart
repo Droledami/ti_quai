@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/OrderElement.dart';
-import '../theme.dart';
+import '../../models/OrderElement.dart';
+import '../../custom_materials/theme.dart';
 import 'Comment.dart';
-import 'LittleCard.dart';
+import '../LittleCard.dart';
 
 class OrderLineElement extends StatelessWidget {
   const OrderLineElement({super.key, required this.orderElement});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../custom_materials/decoration_functions.dart';
-import '../theme.dart';
+import '../custom_materials/theme.dart';
 
 class TitleHeader extends StatelessWidget {
   const TitleHeader({

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../enums/EntryType.dart';
 import '../models/SearchContent.dart';
-import '../theme.dart';
+import '../custom_materials/theme.dart';
 import 'EntryBox.dart';
 
 class SearchArticleWindow extends StatefulWidget {

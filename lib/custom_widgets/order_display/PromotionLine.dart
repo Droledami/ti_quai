@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:ti_quai/custom_widgets/SizedIconButton.dart';
 
-import '../models/Article.dart';
-import '../models/Promotion.dart';
-import '../theme.dart';
-import 'DismissibleBackground.dart';
-import 'LittleCard.dart';
+import '../../models/Article.dart';
+import '../../models/Promotion.dart';
+import '../../custom_materials/theme.dart';
+import '../DismissibleBackground.dart';
+import '../LittleCard.dart';
 
 class PromotionLine extends StatelessWidget {
   const PromotionLine(

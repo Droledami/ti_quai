@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../enums/PaymentMethod.dart';
-import '../theme.dart';
-import 'LittleCard.dart';
+import '../../enums/PaymentMethod.dart';
+import '../../custom_materials/theme.dart';
+import '../LittleCard.dart';
 import 'TextDivider.dart';
 
 class GreatTotal extends StatelessWidget {

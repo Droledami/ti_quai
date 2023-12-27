@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../enums/EntryType.dart';
-import '../processes/functions.dart';
-import '../theme.dart';
-import 'EntryBox.dart';
-import 'LittleCard.dart';
+import '../../enums/EntryType.dart';
+import '../../processes/functions.dart';
+import '../../custom_materials/theme.dart';
+import '../EntryBox.dart';
+import '../LittleCard.dart';
 
 class OrderHeader extends StatelessWidget {
   const OrderHeader(

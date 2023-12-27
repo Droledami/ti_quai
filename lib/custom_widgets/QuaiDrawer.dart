@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
-import 'TextDivider.dart';
+import '../custom_materials/theme.dart';
+import 'order_display/TextDivider.dart';
 
 class QuaiDrawer extends StatelessWidget {
   const QuaiDrawer({

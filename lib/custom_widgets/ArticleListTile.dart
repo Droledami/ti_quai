@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/Article.dart';
-import '../theme.dart';
+import '../custom_materials/theme.dart';
 import 'QuaiTextContainer.dart';
 
 class ArticleListTile extends StatelessWidget {

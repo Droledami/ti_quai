@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../blocs/selectedOrder/selectedOrder_bloc.dart';
-import '../blocs/selectedOrder/selectedOrder_events.dart';
-import '../blocs/selectedOrder/selectedOrder_states.dart';
+import '../blocs/selectedOrder/selected_order_bloc.dart';
+import '../blocs/selectedOrder/selected_order_events.dart';
+import '../blocs/selectedOrder/selected_order_states.dart';
 import '../models/CustomerOrder.dart';
-import 'OrderDetailed.dart';
-import 'OrderSimple.dart';
+import 'order_display/OrderDetailed.dart';
+import 'order_display/OrderSimple.dart';
 
 class ScrollableOrderList extends StatefulWidget {
   const ScrollableOrderList({super.key, required this.orders});

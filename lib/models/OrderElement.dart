@@ -125,6 +125,6 @@ class OrderElement {
         commentIsExtra: commentIsExtra,
         extraPrice: extraPrice,
         hasPromotion: hasPromotion,
-        promotion: promotion?.copy(promotion!));
+        promotion: promotion?.copy());
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
+import '../../custom_materials/theme.dart';
 
 class Comment extends StatelessWidget {
   const Comment({super.key, this.isExtra = false, required this.comment});

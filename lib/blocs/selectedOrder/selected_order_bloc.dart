@@ -1,8 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ti_quai/firestore/firestore_service.dart';
 
-import 'selectedOrder_events.dart';
-import 'selectedOrder_states.dart';
+import 'selected_order_events.dart';
+import 'selected_order_states.dart';
 
 class SelectedOrderBloc extends Bloc<SelectedOrderEvent, SelectedOrderState>{
 

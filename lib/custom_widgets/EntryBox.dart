@@ -1,11 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../enums/EntryType.dart';
-import '../processes/functions.dart';
-import '../theme.dart';
+import '../custom_materials/theme.dart';
 
 class EntryBox extends StatelessWidget {
   const EntryBox(

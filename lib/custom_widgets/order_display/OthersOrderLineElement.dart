@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme.dart';
-import 'LittleCard.dart';
+import '../../custom_materials/theme.dart';
+import '../LittleCard.dart';
 
 class OthersOrderLineElement extends StatelessWidget {
   const OthersOrderLineElement(

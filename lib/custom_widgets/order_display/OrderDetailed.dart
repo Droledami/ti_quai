@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ti_quai/main.dart';
 
-import '../enums/ArticleType.dart';
-import '../models/CustomerOrder.dart';
-import '../theme.dart';
+import '../../custom_materials/theme.dart';
+import '../../enums/ArticleType.dart';
+import '../../models/CustomerOrder.dart';
+import '../../pages/pageArguments/EditOrAddScreenArguments.dart';
 import 'GreatTotal.dart';
 import 'OrderHeader.dart';
 import 'OrderLineElement.dart';

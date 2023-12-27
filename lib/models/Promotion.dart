@@ -10,10 +10,10 @@ class Promotion {
   double discountValue;
   String name;
 
-  Promotion copy(Promotion promotion){
+  Promotion copy(){
     return Promotion(
-      discountValue: promotion.discountValue,
-      name: promotion.name,
+      discountValue: discountValue,
+      name: name,
     );
   }
 }
