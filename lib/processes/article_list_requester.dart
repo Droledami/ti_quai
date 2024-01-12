@@ -9,7 +9,7 @@ String localhost = "localhost:65139";
 
 class ArticleListRequester {
   final client = RetryClient(Client());
-  var url = Uri.http(localhost, '/articles');
+  var url = Uri.http(addressWiFi, '/articles');
 
   Future<List<Article>> getArticleData() async {
     List<Article> articleList = List<Article>.empty(growable: true);
