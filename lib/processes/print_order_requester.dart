@@ -10,7 +10,7 @@ String addressWiFi = "192.168.1.129:65139";
 String localhost = "localhost:65139";
 
 class PrintOrderRequester {
-  var url = Uri.http(addressWiFi, '/print-order');
+  var url = getUri(path: '/print-order');
 
   Future<bool> sendPrintRequest(CustomerOrder order) async {
     var response = await post(url,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ti_quai/enums/EntryType.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../models/Article.dart';
 import '../models/OrderElement.dart';
@@ -127,4 +128,16 @@ Map<String, dynamic> convertPromotionToMap(Promotion prom) {
   promMap[Promotion.keyName] = prom.name;
   promMap[Promotion.keyDiscountValue] = prom.discountValue;
   return promMap;
+}
+
+
+Uri getUri({required String path}){
+  String addressLAN = "192.168.1.128:65139";
+  String addressWiFi = "192.168.1.129:65139";
+  String localhost = "localhost:65139";
+  if(kIsWeb){
+    return Uri.http(localhost, path);
+  }else{
+    return Uri.http(addressLAN, path);
+  }
 }
